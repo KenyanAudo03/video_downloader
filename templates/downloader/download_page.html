@@ -1,11 +1,799 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
-  </head>
-  <body>
-    Hello
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Video Downloader</title>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 800px;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1rem;
+        }
+
+        .platform-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            overflow-x: auto;
+            padding: 5px;
+        }
+
+        .platform-tab {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            background: #f7fafc;
+            color: #4a5568;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+
+        .platform-tab:hover {
+            background: #e2e8f0;
+            transform: translateY(-2px);
+        }
+
+        .platform-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .input-section {
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .input-label {
+            position: absolute;
+            top: -8px;
+            left: 16px;
+            background: white;
+            padding: 0 8px;
+            color: #4a5568;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .quality-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .quality-option {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .quality-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .quality-option.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .download-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .download-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .download-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            display: none;
+        }
+
+        .result-section.show {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .video-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .video-thumbnail {
+            width: 120px;
+            height: 90px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #e2e8f0;
+        }
+
+        .video-details h3 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+            line-height: 1.4;
+        }
+
+        .video-details p {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+
+        .download-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .download-option, .redownload-btn {
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .download-option:hover, .redownload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .history-section {
+            margin-top: 40px;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .history-item {
+            display: flex;
+            gap: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .history-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .history-thumbnail {
+            width: 80px;
+            height: 60px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .history-details {
+            flex: 1;
+        }
+
+        .history-details h4 {
+            color: #2d3748;
+            margin-bottom: 5px;
+            font-size: 1rem;
+        }
+
+        .history-meta {
+            color: #718096;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .history-btn {
+            padding: 6px 12px;
+            background: #e2e8f0;
+            border: none;
+            border-radius: 6px;
+            color: #4a5568;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .history-btn:hover {
+            background: #cbd5e0;
+        }
+
+        .history-btn.primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.success {
+            background: #f0fff4;
+            border: 1px solid #9ae6b4;
+            color: #22543d;
+        }
+
+        .alert.error {
+            background: #fed7d7;
+            border: 1px solid #feb2b2;
+            color: #742a2a;
+        }
+
+        .alert.show {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .video-info {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .history-item {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Universal Downloader</h1>
+            <p>Download videos from your favorite platforms and track your history</p>
+        </div>
+
+        <div class="alert" id="alertBox">
+            <span id="alertMessage"></span>
+        </div>
+
+        <div class="platform-tabs">
+            <button class="platform-tab active" data-platform="youtube">YouTube</button>
+            <button class="platform-tab" data-platform="instagram">Instagram</button>
+            <button class="platform-tab" data-platform="tiktok">TikTok</button>
+            <button class="platform-tab" data-platform="twitter">Twitter</button>
+            <button class="platform-tab" data-platform="facebook">Facebook</button>
+            <button class="platform-tab" data-platform="vimeo">Vimeo</button>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <label class="input-label">Video URL</label>
+                <input type="url" class="input-field" id="videoUrl" placeholder="Paste your video link here...">
+            </div>
+
+            <div class="quality-selector">
+                <div class="quality-option selected" data-quality="best">
+                    <div><strong>Best Quality</strong></div>
+                    <div style="font-size: 0.8rem; color: #718096;">Auto Select</div>
+                </div>
+                <div class="quality-option" data-quality="1080p">
+                    <div><strong>1080p HD</strong></div>
+                    <div style="font-size: 0.8rem; color: #718096;">High Quality</div>
+                </div>
+                <div class="quality-option" data-quality="720p">
+                    <div><strong>720p</strong></div>
+                    <div style="font-size: 0.8rem; color: #718096;">Good Quality</div>
+                </div>
+                <div class="quality-option" data-quality="480p">
+                    <div><strong>480p</strong></div>
+                    <div style="font-size: 0.8rem; color: #718096;">Standard</div>
+                </div>
+                <div class="quality-option" data-quality="audio">
+                    <div><strong>Audio Only</strong></div>
+                    <div style="font-size: 0.8rem; color: #718096;">MP3 Format</div>
+                </div>
+            </div>
+
+            <button class="download-btn" id="downloadBtn">
+                <div class="loading-spinner" id="loadingSpinner"></div>
+                <span id="btnText">Get Video Info</span>
+            </button>
+        </div>
+
+        <div class="result-section" id="resultSection">
+            <div class="video-info">
+                <img src="" alt="Thumbnail" class="video-thumbnail" id="videoThumbnail">
+                <div class="video-details">
+                    <h3 id="videoTitle"></h3>
+                    <p id="videoDuration"></p>
+                    <p id="videoStatus"></p>
+                </div>
+            </div>
+            <div class="download-actions" id="downloadActions">
+                <!-- Download buttons will be added here -->
+            </div>
+        </div>
+
+        <div class="history-section">
+            <div class="history-header">
+                <h3>Download History</h3>
+                <button class="history-btn" onclick="loadHistory()">Refresh</button>
+            </div>
+            <div id="historyContainer">
+                <p style="text-align: center; color: #718096;">Loading history...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentDownloadId = null;
+        let statusCheckInterval = null;
+
+        // Get CSRF token
+        function getCSRFToken() {
+            return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        }
+
+        // Show alert message
+        function showAlert(message, type = 'success') {
+            const alertBox = document.getElementById('alertBox');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alertMessage.textContent = message;
+            alertBox.className = `alert ${type} show`;
+            
+            setTimeout(() => {
+                alertBox.classList.remove('show');
+            }, 5000);
+        }
+
+        // Platform tab switching
+        document.querySelectorAll('.platform-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const platform = tab.dataset.platform;
+                const urlInput = document.getElementById('videoUrl');
+                
+                const placeholders = {
+                    youtube: 'https://www.youtube.com/watch?v=...',
+                    instagram: 'https://www.instagram.com/p/...',
+                    tiktok: 'https://www.tiktok.com/@user/video/...',
+                    twitter: 'https://twitter.com/user/status/...',
+                    facebook: 'https://www.facebook.com/watch?v=...',
+                    vimeo: 'https://vimeo.com/...'
+                };
+                
+                urlInput.placeholder = `Paste your ${tab.textContent} link here...`;
+            });
+        });
+
+        // Quality selector
+        document.querySelectorAll('.quality-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.quality-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+            });
+        });
+
+        // Get selected quality
+        function getSelectedQuality() {
+            const selected = document.querySelector('.quality-option.selected');
+            return selected ? selected.dataset.quality : 'best';
+        }
+
+        // Set loading state
+        function setLoadingState(loading) {
+            const btn = document.getElementById('downloadBtn');
+            const spinner = document.getElementById('loadingSpinner');
+            const btnText = document.getElementById('btnText');
+            
+            if (loading) {
+                btn.disabled = true;
+                spinner.style.display = 'inline-block';
+                btnText.textContent = 'Processing...';
+            } else {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.textContent = 'Get Video Info';
+            }
+        }
+
+        // Check download status
+        function checkStatus(downloadId) {
+            fetch(`/api/check-status/${downloadId}/`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultSection = document.getElementById('resultSection');
+                    const videoTitle = document.getElementById('videoTitle');
+                    const videoThumbnail = document.getElementById('videoThumbnail');
+                    const videoDuration = document.getElementById('videoDuration');
+                    const videoStatus = document.getElementById('videoStatus');
+                    const downloadActions = document.getElementById('downloadActions');
+                    
+                    if (data.status === 'completed') {
+                        // Clear status check interval
+                        if (statusCheckInterval) {
+                            clearInterval(statusCheckInterval);
+                            statusCheckInterval = null;
+                        }
+                        
+                        // Update UI with video info
+                        videoTitle.textContent = data.title || 'Video Ready';
+                        videoThumbnail.src = data.thumbnail_url || '/static/placeholder.jpg';
+                        videoDuration.textContent = data.duration ? `Duration: ${data.duration}s` : '';
+                        videoStatus.textContent = 'Ready to download';
+                        videoStatus.style.color = '#22543d';
+                        
+                        // Add download button
+                        downloadActions.innerHTML = `
+                            <button class="download-option" onclick="startDownload('${downloadId}')">
+                                Download Now
+                            </button>
+                        `;
+                        
+                        resultSection.classList.add('show');
+                        setLoadingState(false);
+                        
+                    } else if (data.status === 'failed') {
+                        // Clear status check interval
+                        if (statusCheckInterval) {
+                            clearInterval(statusCheckInterval);
+                            statusCheckInterval = null;
+                        }
+                        
+                        showAlert(`Error: ${data.error_message}`, 'error');
+                        setLoadingState(false);
+                        
+                    } else if (data.status === 'processing') {
+                        videoStatus.textContent = 'Processing video...';
+                        videoStatus.style.color = '#667eea';
+                        resultSection.classList.add('show');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking status:', error);
+                    showAlert('Error checking video status', 'error');
+                    setLoadingState(false);
+                });
+        }
+
+        // Start download process
+        function startDownload(downloadId) {
+            const downloadActions = document.getElementById('downloadActions');
+            downloadActions.innerHTML = `
+                <button class="download-option" disabled>
+                    <div class="loading-spinner" style="display: inline-block; margin-right: 8px;"></div>
+                    Preparing Download...
+                </button>
+            `;
+            
+            fetch(`/api/download/${downloadId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCSRFToken(),
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'processing') {
+                    // Start checking for file ready status
+                    const checkFileReady = setInterval(() => {
+                        fetch(`/api/check-status/${downloadId}/`)
+                            .then(response => response.json())
+                            .then(statusData => {
+                                if (statusData.status === 'completed' && statusData.download_url) {
+                                    clearInterval(checkFileReady);
+                                    
+                                    // Create download link
+                                    downloadActions.innerHTML = `
+                                        <a href="/download/${downloadId}/" class="download-option" download>
+                                            Download File
+                                        </a>
+                                        <button class="redownload-btn" onclick="startDownload('${downloadId}')">
+                                            Download Again
+                                        </button>
+                                    `;
+                                    
+                                    showAlert('Download ready!', 'success');
+                                    loadHistory(); // Refresh history
+                                }
+                            });
+                    }, 2000);
+                } else {
+                    showAlert('Error starting download', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error starting download:', error);
+                showAlert('Error starting download', 'error');
+            });
+        }
+
+        // Main download button functionality
+        document.getElementById('downloadBtn').addEventListener('click', async () => {
+            const urlInput = document.getElementById('videoUrl');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showAlert('Please enter a video URL', 'error');
+                return;
+            }
+            
+            if (!url.match(/^https?:\/\/.+/)) {
+                showAlert('Please enter a valid URL', 'error');
+                return;
+            }
+            
+            setLoadingState(true);
+            
+            try {
+                const response = await fetch('/api/get-video-info/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCSRFToken(),
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        quality: getSelectedQuality()
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentDownloadId = data.download_id;
+                    
+                    // Start checking status
+                    statusCheckInterval = setInterval(() => {
+                        checkStatus(currentDownloadId);
+                    }, 2000);
+                    
+                    // Check immediately
+                    checkStatus(currentDownloadId);
+                    
+                } else {
+                    throw new Error(data.error || 'Unknown error');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message, 'error');
+                setLoadingState(false);
+            }
+        });
+
+        // Load download history
+        function loadHistory() {
+            fetch('/api/history/')
+                .then(response => response.json())
+                .then(data => {
+                    const historyContainer = document.getElementById('historyContainer');
+                    
+                    if (data.downloads && data.downloads.length > 0) {
+                        historyContainer.innerHTML = data.downloads.map(download => `
+                            <div class="history-item">
+                                <img src="${download.thumbnail_url || '/static/placeholder.jpg'}" 
+                                     alt="Thumbnail" class="history-thumbnail">
+                                <div class="history-details">
+                                    <h4>${download.title || 'Untitled Video'}</h4>
+                                    <div class="history-meta">
+                                        Platform: ${download.platform.charAt(0).toUpperCase() + download.platform.slice(1)} | 
+                                        Status: ${download.status} | 
+                                        Downloaded: ${download.download_count} times |
+                                        ${new Date(download.created_at).toLocaleDateString()}
+                                    </div>
+                                    <div class="history-actions">
+                                        ${download.status === 'completed' ? 
+                                            `<a href="/download/${download.id}/" class="history-btn primary" download>Download</a>` : 
+                                            `<button class="history-btn" onclick="retryDownload('${download.original_url}')">Retry</button>`
+                                        }
+                                        <button class="history-btn" onclick="copyUrl('${download.original_url}')">Copy URL</button>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        historyContainer.innerHTML = '<p style="text-align: center; color: #718096;">No downloads yet</p>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading history:', error);
+                    document.getElementById('historyContainer').innerHTML = 
+                        '<p style="text-align: center; color: #e53e3e;">Error loading history</p>';
+                });
+        }
+
+        // Retry download from history
+        function retryDownload(url) {
+            document.getElementById('videoUrl').value = url;
+            document.getElementById('downloadBtn').click();
+        }
+
+        // Copy URL to clipboard
+        function copyUrl(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                showAlert('URL copied to clipboard!', 'success');
+            }).catch(() => {
+                showAlert('Failed to copy URL', 'error');
+            });
+        }
+
+        // Load history on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+        });
+
+        // URL input validation
+        document.getElementById('videoUrl').addEventListener('input', (e) => {
+            const url = e.target.value;
+            const btn = document.getElementById('downloadBtn');
+            
+            if (url.trim()) {
+                btn.style.opacity = '1';
+                btn.style.pointerEvents = 'auto';
+            } else {
+                btn.style.opacity = '0.7';
+                btn.style.pointerEvents = 'none';
+            }
+        });
+    </script>
+</body>
 </html>
