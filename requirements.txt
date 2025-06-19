@@ -1,0 +1,6 @@
+django
+yt-dlp
+requests
+celery
+redis
+pillow
