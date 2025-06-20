@@ -19,7 +19,7 @@
   <body>
     <!-- Header -->
     <div class="header">
-      <a href="" class="homepage_url">
+      <a href="/" class="homepage_url">
         <div class="logo">
           <div class="logo-icon">📺</div>
           <span>VideoFlow</span>
@@ -39,6 +39,7 @@
               class="search-input"
               id="videoUrl"
               placeholder="Search or enter url"
+              value="{{ request.GET.q }}"
             />
             <button class="search-btn" id="searchBtn">
               <div
