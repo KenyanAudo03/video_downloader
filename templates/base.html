@@ -1,0 +1,105 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}VideoFlow{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/base.css'%}" />
+    <link
+      href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.boxicons.com/fonts/brands/boxicons-brands.min.css"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <!-- Header -->
+    <div class="header">
+      <a href="" class="homepage_url">
+        <div class="logo">
+          <div class="logo-icon">📺</div>
+          <span>VideoFlow</span>
+        </div>
+      </a>
+
+      <div class="search-container">
+        <div class="search-wrapper">
+          <input
+            type="url"
+            class="search-input"
+            id="videoUrl"
+            placeholder="Search or enter url"
+          />
+          <button class="search-btn" id="searchBtn">
+            <div class="spinner" id="searchSpinner" style="display: none"></div>
+            <span id="searchIcon"
+              ><i
+                class="bxr bx-search"
+                style="color: #fff; font-size: 25px"
+              ></i>
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div class="user-actions">
+        <button class="action-btn">
+          <i class="bxr bx-bell" style="color: #fff; font-size: 25px"></i>
+        </button>
+        <button class="action-btn">
+          <i
+            class="bxr bx-user-circle"
+            style="color: #fff; font-size: 25px"
+          ></i>
+        </button>
+      </div>
+    </div>
+    <div class="main-content">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <a href="#" class="sidebar-item active">
+          <div class="sidebar-icon">🏠</div>
+          <span>Home</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <div class="sidebar-icon">📱</div>
+          <span>TikTok</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <div class="sidebar-icon">📷</div>
+          <span>Instagram</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <div class="sidebar-icon">🎥</div>
+          <span>YouTube</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <div class="sidebar-icon">🐦</div>
+          <span>Twitter</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <div class="sidebar-icon">📘</div>
+          <span>Facebook</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <div class="sidebar-icon">🎬</div>
+          <span>Vimeo</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <div class="sidebar-icon">📁</div>
+          <span>Downloads</span>
+        </a>
+        <a href="#" class="sidebar-item">
+          <div class="sidebar-icon">⚙️</div>
+          <span>Settings</span>
+        </a>
+      </div>
+      <!-- Content Area -->
+      <div class="content-area">{% block content %}{% endblock %}</div>
+    </div>
+  </body>
+</html>
