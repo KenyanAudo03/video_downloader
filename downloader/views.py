@@ -1,8 +1,3 @@
-from django.shortcuts import render
-
-# Create your views here.
-
-
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse, HttpResponse, Http404
 from django.views.decorators.csrf import csrf_exempt
@@ -13,26 +8,8 @@ import yt_dlp
 import os
 import threading
 from urllib.parse import urlparse
-from .models import UserSession, VideoDownload
 import uuid
-
-
-def get_or_create_session(request):
-    session_id = request.session.get("session_id")
-    if not session_id:
-        session_id = str(uuid.uuid4())
-        request.session["session_id"] = session_id
-
-    ip_address = request.META.get(
-        "HTTP_X_FORWARDED_FOR", request.META.get("REMOTE_ADDR", "127.0.0.1")
-    )
-    if ip_address:
-        ip_address = ip_address.split(",")[0].strip()
-
-    session, created = UserSession.objects.get_or_create(
-        session_id=session_id, defaults={"ip_address": ip_address}
-    )
-    return session
+import tempfile
 
 
 def detect_platform(url):
@@ -54,11 +31,11 @@ def detect_platform(url):
 
 
 def index(request):
-    session = get_or_create_session(request)
-    recent_downloads = VideoDownload.objects.filter(session=session)[:10]
-    return render(
-        request, "downloader/download_page.html", {"recent_downloads": recent_downloads}
-    )
+    return render(request, "downloader/download_page.html")
+
+
+# Store download info in memory (since we removed the model)
+download_cache = {}
 
 
 @csrf_exempt
@@ -71,16 +48,22 @@ def get_video_info(request):
         if not url:
             return JsonResponse({"error": "URL is required"}, status=400)
 
-        session = get_or_create_session(request)
         platform = detect_platform(url)
-
-        # Create download record
-        download = VideoDownload.objects.create(
-            session=session,
-            original_url=url,
-            platform=platform,
-            quality=data.get("quality", "best"),
-        )
+        download_id = str(uuid.uuid4())
+        
+        # Store initial download info
+        download_cache[download_id] = {
+            'original_url': url,
+            'platform': platform,
+            'quality': data.get("quality", "best"),
+            'status': 'processing',
+            'title': '',
+            'thumbnail_url': '',
+            'duration': '',
+            'error_message': '',
+            'file_path': '',
+            'file_size': 0
+        }
 
         # Get video info using yt-dlp
         ydl_opts = {
@@ -93,23 +76,25 @@ def get_video_info(request):
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(url, download=False)
 
-                    download.title = info.get("title", "Unknown Title")
-                    download.description = info.get("description", "")[:500]
-                    download.thumbnail_url = info.get("thumbnail", "")
-                    download.duration = str(info.get("duration", 0))
-                    download.status = "completed"
-                    download.save()
+                    download_cache[download_id].update({
+                        'title': info.get("title", "Unknown Title"),
+                        'thumbnail_url': info.get("thumbnail", ""),
+                        'duration': str(info.get("duration", 0)),
+                        'status': 'completed'
+                    })
 
             except Exception as e:
-                download.status = "failed"
-                download.error_message = str(e)
-                download.save()
+                download_cache[download_id].update({
+                    'status': 'failed',
+                    'error_message': str(e)
+                })
 
         # Start processing in background
         thread = threading.Thread(target=process_video)
+        thread.daemon = True
         thread.start()
 
-        return JsonResponse({"download_id": str(download.id), "status": "processing"})
+        return JsonResponse({"download_id": download_id, "status": "processing"})
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -118,22 +103,19 @@ def get_video_info(request):
 @require_http_methods(["GET"])
 def check_status(request, download_id):
     try:
-        download = get_object_or_404(VideoDownload, id=download_id)
+        download_info = download_cache.get(download_id)
+        
+        if not download_info:
+            return JsonResponse({"error": "Download not found"}, status=404)
 
-        return JsonResponse(
-            {
-                "status": download.status,
-                "title": download.title,
-                "thumbnail_url": download.thumbnail_url,
-                "duration": download.duration,
-                "error_message": download.error_message,
-                "download_url": (
-                    f"/download/{download_id}/"
-                    if download.status == "completed"
-                    else None
-                ),
-            }
-        )
+        return JsonResponse({
+            "status": download_info['status'],
+            "title": download_info['title'],
+            "thumbnail_url": download_info['thumbnail_url'],
+            "duration": download_info['duration'],
+            "error_message": download_info['error_message'],
+            "download_url": f"/download/{download_id}/" if download_info['status'] == 'completed' else None,
+        })
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -143,29 +125,27 @@ def check_status(request, download_id):
 @require_http_methods(["POST"])
 def download_video(request, download_id):
     try:
-        download = get_object_or_404(VideoDownload, id=download_id)
+        download_info = download_cache.get(download_id)
+        
+        if not download_info:
+            return JsonResponse({"error": "Download not found"}, status=404)
 
-        if download.status != "completed":
+        if download_info['status'] != 'completed':
             return JsonResponse({"error": "Video not ready for download"}, status=400)
 
-        # Update download count
-        download.download_count += 1
-        download.save()
-
         # Setup download directory
-        download_dir = os.path.join(
-            settings.DOWNLOAD_DIR, str(download.session.session_id)
-        )
+        download_dir = os.path.join(tempfile.gettempdir(), 'downloads', download_id)
         os.makedirs(download_dir, exist_ok=True)
 
         # Configure yt-dlp options
+        quality = download_info['quality']
         ydl_opts = {
-            "format": download.quality if download.quality != "best" else "best",
+            "format": quality if quality != "best" else "best",
             "outtmpl": os.path.join(download_dir, "%(title)s.%(ext)s"),
         }
 
         # Handle audio-only downloads
-        if download.quality == "audio":
+        if quality == "audio":
             ydl_opts["format"] = "bestaudio/best"
             ydl_opts["postprocessors"] = [
                 {
@@ -177,37 +157,40 @@ def download_video(request, download_id):
 
         def download_video_file():
             try:
-                download.status = "processing"
-                download.save()
+                download_cache[download_id]['status'] = 'downloading'
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(download.original_url, download=True)
+                    info = ydl.extract_info(download_info['original_url'], download=True)
 
                     # Find the downloaded file
                     filename = ydl.prepare_filename(info)
-                    if download.quality == "audio":
+                    if quality == "audio":
                         filename = filename.rsplit(".", 1)[0] + ".mp3"
 
                     if os.path.exists(filename):
-                        download.file_path = filename
-                        download.file_size = os.path.getsize(filename)
-                        download.status = "completed"
+                        download_cache[download_id].update({
+                            'file_path': filename,
+                            'file_size': os.path.getsize(filename),
+                            'status': 'ready'
+                        })
                     else:
-                        download.status = "failed"
-                        download.error_message = "File not found after download"
-
-                    download.save()
+                        download_cache[download_id].update({
+                            'status': 'failed',
+                            'error_message': "File not found after download"
+                        })
 
             except Exception as e:
-                download.status = "failed"
-                download.error_message = str(e)
-                download.save()
+                download_cache[download_id].update({
+                    'status': 'failed',
+                    'error_message': str(e)
+                })
 
         # Start download in background
         thread = threading.Thread(target=download_video_file)
+        thread.daemon = True
         thread.start()
 
-        return JsonResponse({"status": "processing", "download_id": str(download.id)})
+        return JsonResponse({"status": "downloading", "download_id": download_id})
 
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -216,40 +199,22 @@ def download_video(request, download_id):
 @require_http_methods(["GET"])
 def serve_download(request, download_id):
     try:
-        download = get_object_or_404(VideoDownload, id=download_id)
+        download_info = download_cache.get(download_id)
+        
+        if not download_info or not download_info.get('file_path'):
+            raise Http404("File not found")
 
-        if not download.file_path or not os.path.exists(download.file_path):
+        file_path = download_info['file_path']
+        
+        if not os.path.exists(file_path):
             raise Http404("File not found")
 
         # Serve the file
-        with open(download.file_path, "rb") as f:
+        with open(file_path, "rb") as f:
             response = HttpResponse(f.read(), content_type="application/octet-stream")
-            filename = os.path.basename(download.file_path)
+            filename = os.path.basename(file_path)
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
             return response
 
     except Exception as e:
         raise Http404("File not found")
-
-
-@require_http_methods(["GET"])
-def download_history(request):
-    session = get_or_create_session(request)
-    downloads = VideoDownload.objects.filter(session=session)
-
-    downloads_data = []
-    for download in downloads:
-        downloads_data.append(
-            {
-                "id": str(download.id),
-                "title": download.title,
-                "platform": download.platform,
-                "status": download.status,
-                "created_at": download.created_at.isoformat(),
-                "download_count": download.download_count,
-                "thumbnail_url": download.thumbnail_url,
-                "original_url": download.original_url,
-            }
-        )
-
-    return JsonResponse({"downloads": downloads_data})
