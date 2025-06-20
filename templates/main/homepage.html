@@ -1,0 +1,766 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<style>
+  .video-app-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  /* Category Navigation */
+  .category-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+    padding: 16px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .category-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 25px;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+  }
+
+  .category-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+
+  .category-btn.active {
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+    border-color: #ff6b6b;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  }
+
+  .category-icon {
+    font-size: 16px;
+  }
+
+  /* Video Grid */
+  .youtube-video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  @media (max-width: 640px) {
+    .youtube-video-grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+
+  .youtube-video-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    display: block;
+    position: relative;
+    width: 100%;
+    height: auto;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease forwards;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .youtube-video-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .youtube-video-thumbnail {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%;
+    overflow: hidden;
+    background: #1a1a1a;
+    border-radius: 16px 16px 0 0;
+  }
+
+  .youtube-thumbnail-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: all 0.3s ease;
+  }
+
+  .youtube-video-card:hover .youtube-thumbnail-img {
+    transform: scale(1.05);
+  }
+
+  .youtube-video-duration {
+    position: absolute;
+    bottom: 12px;
+    right: 12px;
+    background: rgba(0, 0, 0, 0.9);
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 3;
+    backdrop-filter: blur(5px);
+  }
+
+  .youtube-video-views {
+    position: absolute;
+    bottom: 12px;
+    left: 12px;
+    background: rgba(0, 0, 0, 0.9);
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    z-index: 3;
+    backdrop-filter: blur(5px);
+  }
+
+  .youtube-play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 2;
+    backdrop-filter: blur(10px);
+  }
+
+  .youtube-video-card:hover .youtube-play-overlay {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+
+  .youtube-play-icon {
+    width: 0;
+    height: 0;
+    border-left: 24px solid #ff6b6b;
+    border-top: 14px solid transparent;
+    border-bottom: 14px solid transparent;
+    margin-left: 6px;
+  }
+
+  .youtube-video-info {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  .youtube-video-title {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: 0 0 8px 0;
+    color: #ffffff;
+    font-family: "Roboto", "Arial", sans-serif;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .youtube-video-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+
+  .youtube-channel-name {
+    font-size: 13px;
+    color: #aaaaaa;
+    font-weight: 500;
+  }
+
+  .youtube-video-time {
+    font-size: 12px;
+    color: #888888;
+  }
+
+  /* Loading States */
+  .loading-indicator {
+    display: none;
+    text-align: center;
+    padding: 3rem;
+    grid-column: 1 / -1;
+  }
+
+  .loading-indicator.show {
+    display: block;
+  }
+
+  .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top: 4px solid #ff6b6b;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .loading-text {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  .error-message {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    background: rgba(255, 0, 0, 0.1);
+    border-radius: 16px;
+    color: #ff6b6b;
+    margin: 1rem 0;
+    grid-column: 1 / -1;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+  }
+
+  .error-message.show {
+    display: block;
+  }
+
+  .end-message {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+    font-size: 16px;
+    grid-column: 1 / -1;
+  }
+
+  .end-message.show {
+    display: block;
+  }
+
+  /* Video Modal */
+  .video-modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .video-modal-content {
+        position: relative;
+        margin: 5% auto;
+        width: 90%;
+        max-width: 1200px;
+        height: 80vh;
+    }
+
+    .video-modal iframe {
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: -40px;
+        right: 0;
+        color: #ffffff;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        z-index: 1001;
+    }
+
+    .close-modal:hover {
+        color: #ff0000;
+    }
+
+  /* Scroll to top button */
+  .scroll-to-top {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    z-index: 999;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  }
+
+  .scroll-to-top:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+  }
+
+  .scroll-to-top.show {
+    display: flex;
+  }
+
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .video-app-container {
+      padding: 0 16px;
+    }
+
+    .category-nav {
+      margin-bottom: 16px;
+      padding: 12px 0;
+    }
+
+    .category-btn {
+      padding: 10px 16px;
+      font-size: 13px;
+    }
+
+    .youtube-video-info {
+      padding: 12px;
+    }
+
+    .youtube-video-title {
+      font-size: 14px;
+    }
+
+    .video-modal-content {
+      margin: 5% auto;
+      width: 95%;
+      height: 70vh;
+    }
+
+    .close-modal {
+      top: -40px;
+      font-size: 28px;
+    }
+  }
+</style>
+
+<div class="video-app-container">
+  <!-- Category Navigation -->
+  <nav class="category-nav" id="categoryNav">
+    <!-- Categories will be loaded here -->
+  </nav>
+
+  <!-- Video Grid -->
+  <div class="youtube-video-grid" id="videoGrid">
+    <!-- Videos will be loaded here dynamically -->
+  </div>
+
+  <!-- Loading Indicator -->
+  <div class="loading-indicator" id="loadingIndicator">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Loading amazing videos...</div>
+  </div>
+
+  <!-- Error Message -->
+  <div class="error-message" id="errorMessage">
+    <p><strong>Oops!</strong> Failed to load videos. Please check your internet connection and try again.</p>
+  </div>
+
+  <!-- End Message -->
+  <div class="end-message" id="endMessage">
+    <p>🎉 You've reached the end! No more videos to load.</p>
+  </div>
+</div>
+
+<!-- Video Modal -->
+<div id="videoModal" class="video-modal">
+  <div class="video-modal-content">
+    <span class="close-modal" id="closeModal">&times;</span>
+    <iframe
+      id="videoFrame"
+      src=""
+      frameborder="0"
+      allowfullscreen
+      allow="autoplay; encrypted-media"
+    ></iframe>
+  </div>
+</div>
+
+<!-- Scroll to Top Button -->
+<button class="scroll-to-top" id="scrollToTop">
+  ↑
+</button>
+
+<script>
+class VideMateApp {
+  constructor() {
+    this.isLoading = false;
+    this.hasMore = true;
+    this.currentPage = 1;
+    this.currentCategory = 'mixed';
+    this.videoGrid = document.getElementById("videoGrid");
+    this.loadingIndicator = document.getElementById("loadingIndicator");
+    this.errorMessage = document.getElementById("errorMessage");
+    this.endMessage = document.getElementById("endMessage");
+    this.videoModal = document.getElementById("videoModal");
+    this.videoFrame = document.getElementById("videoFrame");
+    this.closeModal = document.getElementById("closeModal");
+    this.categoryNav = document.getElementById("categoryNav");
+    this.scrollToTop = document.getElementById("scrollToTop");
+    this.contentArea = null;
+
+    this.init();
+  }
+
+  async init() {
+    this.findContentArea();
+    await this.loadCategories();
+    await this.loadVideos();
+    this.setupInfiniteScroll();
+    this.setupModal();
+    this.setupScrollToTop();
+  }
+
+  findContentArea() {
+    this.contentArea = 
+      document.querySelector(".content-area") ||
+      document.querySelector('[class*="content"]') ||
+      document.querySelector("main") ||
+      document.querySelector("#content") ||
+      document.querySelector(".main-content > div:last-child") ||
+      window;
+
+    if (this.contentArea !== window) {
+      const computedStyle = window.getComputedStyle(this.contentArea);
+      if (computedStyle.overflowY === "visible") {
+        this.contentArea.style.overflowY = "auto";
+      }
+    }
+  }
+
+  async loadCategories() {
+    try {
+      const response = await fetch('/categories/');
+      const data = await response.json();
+      
+      this.renderCategories(data.categories);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      this.renderFallbackCategories();
+    }
+  }
+
+  renderCategories(categories) {
+    this.categoryNav.innerHTML = categories.map(category => `
+      <button class="category-btn ${category.id === this.currentCategory ? 'active' : ''}" 
+              data-category="${category.id}">
+        <span class="category-icon">${category.icon}</span>
+        <span>${category.name}</span>
+      </button>
+    `).join('');
+
+    // Add click event listeners
+    this.categoryNav.querySelectorAll('.category-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const category = e.currentTarget.dataset.category;
+        this.switchCategory(category);
+      });
+    });
+  }
+
+  renderFallbackCategories() {
+    const fallbackCategories = [
+      {id: 'mixed', name: 'Mixed', icon: '🎯'},
+      {id: 'music', name: 'Music', icon: '🎵'},
+      {id: 'gaming', name: 'Gaming', icon: '🎮'},
+      {id: 'entertainment', name: 'Entertainment', icon: '🎬'},
+      {id: 'news', name: 'News', icon: '📰'},
+    ];
+    this.renderCategories(fallbackCategories);
+  }
+
+  async switchCategory(category) {
+    if (category === this.currentCategory) return;
+
+    this.currentCategory = category;
+    this.currentPage = 1;
+    this.hasMore = true;
+    
+    // Update active category button
+    this.categoryNav.querySelectorAll('.category-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.dataset.category === category) {
+        btn.classList.add('active');
+      }
+    });
+
+    // Clear current videos and load new ones
+    this.videoGrid.innerHTML = '';
+    this.hideError();
+    this.hideEndMessage();
+    await this.loadVideos();
+  }
+
+  setupInfiniteScroll() {
+    let scrollTimeout;
+
+    const scrollHandler = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        if (this.isLoading || !this.hasMore) return;
+
+        let scrollTop, scrollHeight, clientHeight;
+
+        if (this.contentArea === window) {
+          scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+          scrollHeight = document.documentElement.scrollHeight;
+          clientHeight = window.innerHeight;
+        } else {
+          scrollTop = this.contentArea.scrollTop;
+          scrollHeight = this.contentArea.scrollHeight;
+          clientHeight = this.contentArea.clientHeight;
+        }
+
+        // Show/hide scroll to top button
+        if (scrollTop > 300) {
+          this.scrollToTop.classList.add('show');
+        } else {
+          this.scrollToTop.classList.remove('show');
+        }
+
+        // Load more when user is 300px from bottom
+        const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+        if (distanceFromBottom <= 300) {
+          this.loadVideos();
+        }
+      }, 100);
+    };
+
+    if (this.contentArea === window) {
+      window.addEventListener("scroll", scrollHandler);
+    } else {
+      this.contentArea.addEventListener("scroll", scrollHandler);
+    }
+  }
+
+  setupModal() {
+    this.closeModal.addEventListener("click", () => {
+      this.closeVideoModal();
+    });
+
+    this.videoModal.addEventListener("click", (e) => {
+      if (e.target === this.videoModal) {
+        this.closeVideoModal();
+      }
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        this.closeVideoModal();
+      }
+    });
+  }
+
+  setupScrollToTop() {
+    this.scrollToTop.addEventListener('click', () => {
+      if (this.contentArea === window) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        this.contentArea.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+  }
+
+  async loadVideos() {
+    if (this.isLoading || !this.hasMore) return;
+
+    this.isLoading = true;
+    this.showLoading();
+    this.hideError();
+
+    try {
+      const url = `/load-videos/?page=${this.currentPage}&category=${this.currentCategory}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+
+      if (data.videos && data.videos.length === 0) {
+        this.hasMore = false;
+        this.showEndMessage();
+        return;
+      }
+
+      this.addVideosToGrid(data.videos || []);
+      this.currentPage += 1;
+      this.hasMore = data.hasMore !== false;
+
+      if (!this.hasMore) {
+        this.showEndMessage();
+      }
+
+    } catch (error) {
+      console.error("Error loading videos:", error);
+      this.showError();
+    } finally {
+      this.isLoading = false;
+      this.hideLoading();
+    }
+  }
+
+  addVideosToGrid(videos) {
+    videos.forEach((video, index) => {
+      const videoCard = this.createVideoCard(video);
+      
+      // Add staggered animation delay
+      setTimeout(() => {
+        this.videoGrid.appendChild(videoCard);
+      }, index * 100);
+    });
+  }
+
+  createVideoCard(video) {
+    const card = document.createElement("div");
+    card.className = "youtube-video-card";
+    card.dataset.videoId = video.video_id;
+
+    card.innerHTML = `
+      <div class="youtube-video-thumbnail">
+        <img src="${video.thumbnail}" alt="${video.title}" loading="lazy" class="youtube-thumbnail-img">
+        <div class="youtube-video-duration">${video.duration}</div>
+        <div class="youtube-video-views">${video.view_count}</div>
+        <div class="youtube-play-overlay">
+          <div class="youtube-play-icon"></div>
+        </div>
+      </div>
+      <div class="youtube-video-info">
+        <h3 class="youtube-video-title">${video.title}</h3>
+        <div class="youtube-video-meta">
+          <span class="youtube-channel-name">${video.channel_title}</span>
+          <span class="youtube-video-time">${video.time_ago}</span>
+        </div>
+      </div>
+    `;
+
+    // Add click event to open modal
+    card.addEventListener("click", () => {
+      this.openVideoModal(video.video_id, video.title);
+    });
+
+    return card;
+  }
+
+  openVideoModal(videoId, title) {
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&showinfo=0`;
+    this.videoFrame.src = embedUrl;
+    this.videoModal.style.display = "block";
+    document.body.style.overflow = "hidden";
+
+    // Add analytics or tracking here if needed
+    console.log(`Playing video: ${title} (${videoId})`);
+  }
+
+  closeVideoModal() {
+    this.videoModal.style.display = "none";
+    this.videoFrame.src = "";
+    document.body.style.overflow = "auto";
+  }
+
+  showLoading() {
+    this.loadingIndicator.classList.add("show");
+  }
+
+  hideLoading() {
+    this.loadingIndicator.classList.remove("show");
+  }
+
+  showError() {
+    this.errorMessage.classList.add("show");
+  }
+
+  hideError() {
+    this.errorMessage.classList.remove("show");
+  }
+
+  showEndMessage() {
+    this.endMessage.classList.add("show");
+  }
+
+  hideEndMessage() {
+    this.endMessage.classList.remove("show");
+  }
+}
+
+// Initialize the app when DOM is loaded
+document.addEventListener("DOMContentLoaded", () => {
+  new VideMateApp();
+});
+
+// Service Worker for caching (optional)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('SW registered: ', registration);
+      })
+      .catch((registrationError) => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
+}
+</script>
+
+{% endblock %}
