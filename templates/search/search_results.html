@@ -2,49 +2,81 @@
 {% load static %}
 {% block title %}{{ query }}{% endblock %}
 {% block content %}
-    <link rel="stylesheet" href="{% static 'css/search/search_results.css' %}" />
+<link rel="stylesheet" href="{% static 'css/search/search_results.css' %}" />
 <div class="video-app-container">
   {% if error %}
     <div class="error">{{ error }}</div>
   {% elif type == 'search' and results %}
-    <div class="searched-video-grid" id="videoGrid">
-      {% for video in results %}
-        <div class="searched-video-card" data-video-id="{{ video.id }}">
-          <div class="searched-video-thumbnail" onclick="openVideoModal('{{ video.id }}', '{{ video.title|escapejs }}')">
-            {% if video.thumbnails %}
-              <img class="searched-thumbnail-img" src="{{ video.thumbnails.0.url }}" alt="{{ video.title }}" loading="lazy" />
-            {% endif %}
-            
-            {% if video.duration %}
-              <div class="searched-video-duration">{{ video.duration }}</div>
-            {% endif %}
-            
-            {% if video.viewCount %}
-              <div class="searched-video-views">{{ video.viewCount.short }}</div>
-            {% endif %}
-            
-            <div class="searched-play-overlay">
-              <div class="searched-play-icon"></div>
-            </div>
-          </div>
-          
-          <div class="searched-video-info">
-            <h3 class="searched-video-title">{{ video.title }}</h3>
-            <div class="searched-video-meta">
-              <span>{{ video.channel.name }}</span>
-              {% if video.publishedTime %}
-                <span>{{ video.publishedTime }}</span>
-              {% endif %}
-            </div>
-            <button class="download-btn" onclick="downloadVideo('{{ video.id }}', '{{ video.title|escapejs }}')">
-              <svg class="download-icon" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-              </svg>
-              Download
-            </button>
-          </div>
+    <!-- Split layout container -->
+    <div class="split-layout" id="splitLayout" style="display: none;">
+      <div class="video-player-section">
+        <div class="video-player-container">
+          <span class="close-player" onclick="closeVideoPlayer()">×</span>
+          <iframe id="sideVideoFrame" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe>
         </div>
-      {% endfor %}
+        <div class="current-video-info" id="currentVideoInfo">
+          <h3 id="currentVideoTitle"></h3>
+          <!-- Download button for currently playing video -->
+          <button class="current-video-download-btn" id="currentVideoDownloadBtn" onclick="downloadCurrentVideo()">
+            <svg class="download-icon" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+            </svg>
+            Download Video
+          </button>
+        </div>
+      </div>
+      <div class="video-list-section">
+        <div class="searched-video-grid" id="sideVideoGrid">
+          <!-- Videos will be populated here -->
+        </div>
+        <div class="loading-spinner" id="sideLoadingSpinner" style="display: none;">
+          <div class="spinner"></div>
+          <p>Loading more videos...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Original grid layout -->
+    <div class="original-layout" id="originalLayout">
+      <div class="searched-video-grid" id="videoGrid">
+        {% for video in results %}
+          <div class="searched-video-card" data-video-id="{{ video.id }}">
+            <div class="searched-video-thumbnail" onclick="openVideoPlayer('{{ video.id }}', '{{ video.title|escapejs }}')">
+              {% if video.thumbnails %}
+                <img class="searched-thumbnail-img" src="{{ video.thumbnails.0.url }}" alt="{{ video.title }}" loading="lazy" />
+              {% endif %}
+              
+              {% if video.duration %}
+                <div class="searched-video-duration">{{ video.duration }}</div>
+              {% endif %}
+              
+              {% if video.viewCount %}
+                <div class="searched-video-views">{{ video.viewCount.short }}</div>
+              {% endif %}
+              
+              <div class="searched-play-overlay">
+                <div class="searched-play-icon"></div>
+              </div>
+            </div>
+            
+            <div class="searched-video-info">
+              <h3 class="searched-video-title">{{ video.title }}</h3>
+              <div class="searched-video-meta">
+                <span>{{ video.channel.name }}</span>
+                {% if video.publishedTime %}
+                  <span>{{ video.publishedTime }}</span>
+                {% endif %}
+              </div>
+              <button class="download-btn" onclick="downloadVideo('{{ video.id }}', '{{ video.title|escapejs }}')">
+                <svg class="download-icon" fill="currentColor" viewBox="0 0 20 20">
+                  <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+                Download
+              </button>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
     </div>
     
     <div class="loading-spinner" id="loadingSpinner">
@@ -53,301 +85,4 @@
     </div>
   {% endif %}
 </div>
-
-<div id="videoModal" class="video-modal">
-  <div class="video-modal-content">
-    <span class="close-modal" onclick="closeVideoModal()">×</span>
-    <iframe id="videoFrame" allowfullscreen allow="autoplay; encrypted-media" frameborder="0"></iframe>
-  </div>
-</div>
-
-<script>
-  const videoModal = document.getElementById('videoModal');
-  const videoFrame = document.getElementById('videoFrame');
-  const videoGrid = document.getElementById('videoGrid');
-  const loadingSpinner = document.getElementById('loadingSpinner');
-  
-  let nextPage = 2; // Start from page 2 since page 1 is already loaded
-  let isLoading = false;
-  let hasMoreVideos = true;
-  let currentQuery = '{{ query|escapejs }}';
-  let loadedVideoIds = new Set(); // Track loaded video IDs to prevent duplicates
-
-  // Initialize loaded video IDs with current videos
-  document.addEventListener('DOMContentLoaded', function() {
-    const currentVideos = document.querySelectorAll('.searched-video-card[data-video-id]');
-    currentVideos.forEach(video => {
-      const videoId = video.getAttribute('data-video-id');
-      if (videoId) {
-        loadedVideoIds.add(videoId);
-      }
-    });
-    console.log(`Initialized with ${loadedVideoIds.size} video IDs`);
-  });
-
-  function formatViewCount(count) {
-    if (!count) return '';
-    
-    if (count >= 1000000) {
-      return (count / 1000000).toFixed(1) + 'M';
-    } else if (count >= 1000) {
-      return (count / 1000).toFixed(1) + 'K';
-    }
-    return count.toString();
-  }
-
-  function formatDuration(duration) {
-    if (!duration) return '';
-    
-    // Convert duration from seconds to MM:SS or HH:MM:SS format
-    const seconds = parseInt(duration);
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    
-    if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-    }
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  }
-
-  function openVideoModal(videoId, title) {
-    if (!videoId) {
-      console.error('No video ID provided');
-      return;
-    }
-    
-    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&showinfo=0&modestbranding=1`;
-    
-    videoFrame.src = embedUrl;
-    videoModal.style.display = "block";
-    document.body.style.overflow = "hidden";
-    
-    console.log(`Now playing: ${title}`);
-  }
-
-  function closeVideoModal() {
-    videoFrame.src = "";
-    videoModal.style.display = "none";
-    document.body.style.overflow = "auto";
-  }
-
-  function downloadVideo(videoId, title) {
-    if (!videoId) {
-      alert('Video ID not available');
-      return;
-    }
-    
-    // Create download URL - you'll need to implement the backend endpoint
-    const downloadUrl = `/download-video/?id=${videoId}&title=${encodeURIComponent(title)}`;
-    
-    // Create temporary link and trigger download
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `${title}.mp4`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    console.log(`Downloading: ${title} (ID: ${videoId})`);
-  }
-
-  function createVideoCard(video) {
-    // Check if this video is already loaded
-    if (loadedVideoIds.has(video.id)) {
-      console.log(`Skipping duplicate video: ${video.id}`);
-      return null;
-    }
-
-    // Add to loaded IDs
-    loadedVideoIds.add(video.id);
-
-    // Handle view count properly based on your backend response
-    let viewCount = '';
-    if (video.shortViews) {
-      viewCount = video.shortViews;
-    } else if (video.viewCount) {
-      if (typeof video.viewCount === 'object' && video.viewCount.simpleText) {
-        viewCount = formatViewCount(parseInt(video.viewCount.simpleText.replace(/[^0-9]/g, '')));
-      } else if (typeof video.viewCount === 'string') {
-        viewCount = video.viewCount;
-      }
-    }
-    
-    const duration = video.duration || '';
-    const channelName = video.channel ? video.channel.name : 'Unknown Channel';
-    const publishedTime = video.publishedTime || '';
-    const thumbnailUrl = video.thumbnails && video.thumbnails.length > 0 ? video.thumbnails[0].url : '';
-    
-    return `
-      <div class="searched-video-card" data-video-id="${video.id}">
-        <div class="searched-video-thumbnail" onclick="openVideoModal('${video.id}', '${video.title.replace(/'/g, "\\'")}')">
-          ${thumbnailUrl ? 
-            `<img class="searched-thumbnail-img" src="${thumbnailUrl}" alt="${video.title}" loading="lazy" />` : 
-            '<div class="no-thumbnail">No thumbnail</div>'
-          }
-          
-          ${duration ? `<div class="searched-video-duration">${duration}</div>` : ''}
-          ${viewCount ? `<div class="searched-video-views">${viewCount}${viewCount.includes('views') ? '' : ' views'}</div>` : ''}
-          
-          <div class="searched-play-overlay">
-            <div class="searched-play-icon"></div>
-          </div>
-        </div>
-        
-        <div class="searched-video-info">
-          <h3 class="searched-video-title">${video.title}</h3>
-          <div class="searched-video-meta">
-            <span>${channelName}</span>
-            ${publishedTime ? `<span>${publishedTime}</span>` : ''}
-          </div>
-          <button class="download-btn" onclick="downloadVideo('${video.id}', '${video.title.replace(/'/g, "\\'")}')">
-            <svg class="download-icon" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-            </svg>
-            Download
-          </button>
-        </div>
-      </div>
-    `;
-  }
-
-  async function loadMoreVideos() {
-    if (isLoading || !hasMoreVideos || !currentQuery) return;
-    
-    isLoading = true;
-    loadingSpinner.style.display = 'block';
-    
-    try {
-      console.log(`Loading page ${nextPage} for query: ${currentQuery}`);
-      
-      // Use the correct URL pattern from your Django URLs
-      const response = await fetch(`/search/search-video/?q=${encodeURIComponent(currentQuery)}&page=${nextPage}`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        console.error('Backend error:', data.error);
-        hasMoreVideos = false;
-        return;
-      }
-      
-      if (data.results && data.results.length > 0) {
-        let newVideosAdded = 0;
-        
-        data.results.forEach(video => {
-          const videoCardHTML = createVideoCard(video);
-          if (videoCardHTML) { // Only add if not a duplicate
-            videoGrid.insertAdjacentHTML('beforeend', videoCardHTML);
-            newVideosAdded++;
-          }
-        });
-        
-        if (newVideosAdded > 0) {
-          nextPage++;
-          console.log(`Loaded ${newVideosAdded} new videos (Page ${nextPage - 1})`);
-        }
-        
-        // Check if there are more videos based on backend response
-        if (data.has_more === false || data.results.length < 10 || newVideosAdded === 0) {
-          hasMoreVideos = false;
-          console.log('No more videos available');
-        }
-      } else {
-        hasMoreVideos = false;
-        console.log('No more videos available');
-      }
-    } catch (error) {
-      console.error('Error loading more videos:', error);
-      hasMoreVideos = false;
-      
-      // Show user-friendly error message
-      const errorMessage = document.createElement('div');
-      errorMessage.className = 'load-error';
-      errorMessage.innerHTML = `
-        <p>Failed to load more videos. <button onclick="location.reload()">Refresh page</button></p>
-      `;
-      videoGrid.appendChild(errorMessage);
-    } finally {
-      isLoading = false;
-      loadingSpinner.style.display = 'none';
-    }
-  }
-
-  // Content area scroll implementation
-  function handleContentAreaScroll() {
-    // Get the content area element
-    const contentArea = document.querySelector('.content-area');
-    
-    if (!contentArea) {
-      console.warn('Content area not found, falling back to window scroll');
-      return;
-    }
-    
-    const scrollTop = contentArea.scrollTop;
-    const scrollHeight = contentArea.scrollHeight;
-    const clientHeight = contentArea.clientHeight;
-    
-    // Load more when within 100px of the bottom
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-      loadMoreVideos();
-    }
-  }
-
-  // Initialize scroll listener on content area
-  function initializeScrollListener() {
-    const contentArea = document.querySelector('.content-area');
-    
-    if (contentArea) {
-      contentArea.addEventListener('scroll', handleContentAreaScroll);
-      console.log('Content area scroll listener initialized');
-    } else {
-      // Fallback to window scroll if content area is not found
-      console.warn('Content area not found, using window scroll as fallback');
-      window.addEventListener('scroll', function() {
-        const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-        const scrollHeight = document.documentElement.scrollHeight || document.body.scrollHeight;
-        const clientHeight = document.documentElement.clientHeight || window.innerHeight;
-        
-        if (scrollTop + clientHeight >= scrollHeight - 100) {
-          loadMoreVideos();
-        }
-      });
-    }
-  }
-
-  // Event listeners
-  document.addEventListener('DOMContentLoaded', function() {
-    initializeScrollListener();
-  });
-  
-  // If DOM is already loaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeScrollListener);
-  } else {
-    initializeScrollListener();
-  }
-  
-  window.onclick = (e) => {
-    if (e.target === videoModal) closeVideoModal();
-  }
-
-  // Keyboard controls
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && videoModal.style.display === 'block') {
-      closeVideoModal();
-    }
-  });
-
-  // Handle video load errors
-  videoFrame.addEventListener('error', () => {
-    console.error('Video failed to load');
-    alert('Video failed to load. Please try again.');
-  });
-</script>
 {% endblock %}
