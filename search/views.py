@@ -95,29 +95,22 @@ def search_video(request):
     if request.method == "GET":
         query = request.GET.get("q", "").strip()
         page = int(request.GET.get("page", 1))
+        limit = int(request.GET.get("limit", 20))  # bump it up, default to 20
 
         if not query:
             return JsonResponse({"error": "No query provided"}, status=400)
 
         try:
-            limit = 10
-
-            # Use the YouTubeSearchPython library's built-in pagination
-            # Create a new search instance for each page to get fresh results
             videosSearch = VideosSearch(query, limit=limit)
 
-            # If it's not the first page, get the next pages
-            if page > 1:
-                for _ in range(page - 1):
-                    videosSearch.next()
+            for _ in range(page - 1):
+                videosSearch.next()
 
             search_result = videosSearch.result()
             results = search_result.get("result", [])
 
-            # Process video data to ensure proper formatting
             processed_results = [process_video_data(video) for video in results]
 
-            # Check if there are more pages available
             has_more = (
                 len(results) == limit
                 and videosSearch.result().get("nextPageToken") is not None
