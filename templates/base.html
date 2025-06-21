@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}VideoFlow{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/base.css'%}" />
+    <link rel="stylesheet" href="{% static 'css/base.css' %}" />
     <link
       href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
       rel="stylesheet"
@@ -14,8 +14,12 @@
       href="https://cdn.boxicons.com/fonts/brands/boxicons-brands.min.css"
       rel="stylesheet"
     />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{% static 'images/default_images/favicon.png' %}"
+    />
   </head>
-
   <body>
     <!-- Header -->
     <div class="header">
@@ -28,6 +32,7 @@
 
       <div class="search-container">
         <form
+          id="searchForm"
           action="{% url 'search:search_results' %}"
           method="get"
           style="width: 100%"
@@ -39,9 +44,18 @@
               class="search-input"
               id="videoUrl"
               placeholder="Search or enter url"
+              autocomplete="off"
               value="{{ request.GET.q }}"
             />
-            <button class="search-btn" id="searchBtn">
+            <span class="clear-icon" id="clearSearch">
+              <i class="bx bx-x"></i>
+            </span>
+            <div
+              id="suggestionsBox"
+              class="suggestions"
+              style="display: none"
+            ></div>
+            <button class="search-btn" id="searchBtn" type="submit">
               <div
                 class="spinner"
                 id="searchSpinner"
@@ -49,7 +63,7 @@
               ></div>
               <span id="searchIcon">
                 <i
-                  class="bxr bx-search"
+                  class="bx bx-search"
                   style="color: #fff; font-size: 25px"
                 ></i>
               </span>
@@ -60,21 +74,94 @@
 
       <div class="user-actions">
         <button class="action-btn">
-          <i class="bxr bx-bell" style="color: #fff; font-size: 25px"></i>
+          <i class="bx bx-bell" style="color: #fff; font-size: 25px"></i>
         </button>
         <button class="action-btn">
-          <i
-            class="bxr bx-user-circle"
-            style="color: #fff; font-size: 25px"
-          ></i>
+          <i class="bx bx-user-circle" style="color: #fff; font-size: 25px"></i>
         </button>
       </div>
     </div>
+
     <div class="main-content">
-      <!-- Sidebar -->
       <div class="sidebar"></div>
-      <!-- Content Area -->
       <div class="content-area">{% block content %}{% endblock %}</div>
     </div>
+
+    <!-- JS Suggestions + Clear Logic -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const input = document.getElementById("videoUrl");
+        const box = document.getElementById("suggestionsBox");
+        const form = document.getElementById("searchForm");
+        const clearBtn = document.getElementById("clearSearch");
+        let debounceTimer;
+
+        const toggleClearIcon = () => {
+          clearBtn.style.display = input.value.trim() ? "block" : "none";
+        };
+
+        input.addEventListener("input", () => {
+          toggleClearIcon();
+          const query = input.value.trim();
+          clearTimeout(debounceTimer);
+
+          if (!query) {
+            box.style.display = "none";
+            return;
+          }
+
+          debounceTimer = setTimeout(() => {
+            fetch(`/search/suggest?q=${encodeURIComponent(query)}`)
+              .then((res) => res.json())
+              .then((data) => {
+                box.innerHTML = "";
+                const suggestions = data?.suggestions?.result || [];
+
+                if (suggestions.length) {
+                  box.style.display = "block";
+                  suggestions.forEach((suggestion) => {
+                    const div = document.createElement("div");
+                    div.className = "suggestion-item";
+                    div.textContent = suggestion;
+                    div.addEventListener("click", () => {
+                      input.value = suggestion;
+                      box.style.display = "none";
+                      toggleClearIcon();
+                      form.submit();
+                    });
+                    box.appendChild(div);
+                  });
+                } else {
+                  box.style.display = "none";
+                }
+              })
+              .catch((err) => {
+                console.error("Suggestion error:", err);
+                box.style.display = "none";
+              });
+          }, 300);
+        });
+
+        clearBtn.addEventListener("click", () => {
+          input.value = "";
+          box.style.display = "none";
+          clearBtn.style.display = "none";
+          input.focus();
+        });
+
+        input.addEventListener("focus", () => {
+          toggleClearIcon();
+          if (box.children.length) {
+            box.style.display = "block";
+          }
+        });
+
+        input.addEventListener("blur", () => {
+          setTimeout(() => {
+            box.style.display = "none";
+          }, 200);
+        });
+      });
+    </script>
   </body>
 </html>
