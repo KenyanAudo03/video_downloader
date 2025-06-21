@@ -6,10 +6,8 @@ app_name = "search"
 urlpatterns = [
     # Main search pages
     path("results/", views.search_results, name="search_results"),
-    
     # API endpoints
     path("search-video/", views.search_video, name="search_video"),
-    
     # Utility endpoints
     path(
         "video-metadata/<str:video_id>/",
