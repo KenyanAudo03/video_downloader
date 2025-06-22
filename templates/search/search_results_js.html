@@ -1,225 +1,450 @@
 <script>
-    const splitLayout = document.getElementById("splitLayout");
-const originalLayout = document.getElementById("originalLayout");
-const sideVideoFrame = document.getElementById("sideVideoFrame");
-const sideVideoGrid = document.getElementById("sideVideoGrid");
-const currentVideoTitle = document.getElementById("currentVideoTitle");
-const videoGrid = document.getElementById("videoGrid");
-const sideLoadingSpinner = document.getElementById("sideLoadingSpinner");
-const currentVideoDownloadBtn = document.getElementById(
-  "currentVideoDownloadBtn"
-);
-
-let nextPage = 2;
-let isLoading = false;
-let hasMoreVideos = true;
-let currentQuery = "{{ query|escapejs }}";
-let loadedVideoIds = new Set();
-let sideLoadedVideoIds = new Set(); // Separate tracking for side grid
-let currentPlayingVideoId = null;
-let currentPlayingVideoTitle = null;
-let autoNextEnabled = true; // Auto-next is mandatory and enabled by default
-let currentVideoIndex = 0;
-let allLoadedVideos = []; // Array to track all loaded videos in order
-let videoEndCheckInterval = null;
-let restrictedVideoSkipTimeout = null; // Timeout for auto-skipping restricted videos
-
-document.addEventListener("DOMContentLoaded", function () {
-  const currentVideos = document.querySelectorAll(
-    ".searched-video-card[data-video-id]"
+  const splitLayout = document.getElementById("splitLayout");
+  const originalLayout = document.getElementById("originalLayout");
+  const sideVideoFrame = document.getElementById("sideVideoFrame");
+  const sideVideoGrid = document.getElementById("sideVideoGrid");
+  const currentVideoTitle = document.getElementById("currentVideoTitle");
+  const videoGrid = document.getElementById("videoGrid");
+  const sideLoadingSpinner = document.getElementById("sideLoadingSpinner");
+  const currentVideoDownloadBtn = document.getElementById(
+    "currentVideoDownloadBtn"
   );
-  currentVideos.forEach((video, index) => {
-    const videoId = video.getAttribute("data-video-id");
-    if (videoId) {
-      loadedVideoIds.add(videoId);
-      // Build initial video list for auto-next
-      const title =
-        video.querySelector(".searched-video-title")?.textContent ||
-        "Unknown Title";
-      allLoadedVideos.push({ id: videoId, title: title });
-    }
-  });
-});
 
-function highlightCurrentVideo(videoId) {
-  // Remove highlight from all videos
-  const allVideoCards = document.querySelectorAll(".searched-video-card");
-  allVideoCards.forEach((card) => {
-    card.classList.remove("currently-playing");
-  });
+  let nextPage = 2;
+  let isLoading = false;
+  let hasMoreVideos = true;
+  let currentQuery = "{{ query|escapejs }}";
+  let loadedVideoIds = new Set();
+  let sideLoadedVideoIds = new Set(); // Separate tracking for side grid
+  let currentPlayingVideoId = null;
+  let currentPlayingVideoTitle = null;
+  let currentPlayingVideoChannel = null;
+  let autoNextEnabled = true; // Auto-next is mandatory and enabled by default
+  let currentVideoIndex = 0;
+  let allLoadedVideos = []; // Array to track all loaded videos in order
+  let videoEndCheckInterval = null;
+  let restrictedVideoSkipTimeout = null; // Timeout for auto-skipping restricted videos
+  let hasTrackedCurrentVideo = false; // Flag to prevent duplicate tracking
+  let currentVideoId = null; // For Sharing
 
-  // Add highlight to current video
-  const currentVideoCards = document.querySelectorAll(
-    `[data-video-id="${videoId}"]`
-  );
-  currentVideoCards.forEach((card) => {
-    card.classList.add("currently-playing");
-  });
-}
-
-function startVideoEndDetection() {
-  // Clear any existing interval
-  if (videoEndCheckInterval) {
-    clearInterval(videoEndCheckInterval);
-  }
-
-  // Use postMessage API to communicate with YouTube iframe
-  videoEndCheckInterval = setInterval(() => {
-    if (sideVideoFrame.contentWindow) {
-      try {
-        sideVideoFrame.contentWindow.postMessage(
-          '{"event":"listening","id":"player"}',
-          "*"
-        );
-      } catch (error) {
-        // Silently handle cross-origin restrictions
-      }
-    }
-  }, 1000);
-}
-
-function stopVideoEndDetection() {
-  if (videoEndCheckInterval) {
-    clearInterval(videoEndCheckInterval);
-    videoEndCheckInterval = null;
-  }
-}
-
-function startRestrictedVideoSkipTimer() {
-  // Clear any existing timeout
-  if (restrictedVideoSkipTimeout) {
-    clearTimeout(restrictedVideoSkipTimeout);
-  }
-
-  // Set timeout to skip restricted video after 3 seconds
-  restrictedVideoSkipTimeout = setTimeout(() => {
-    if (currentPlayingVideoId && autoNextEnabled) {
-      playNextVideo();
-    }
-  }, 3000);
-}
-
-function clearRestrictedVideoSkipTimer() {
-  if (restrictedVideoSkipTimeout) {
-    clearTimeout(restrictedVideoSkipTimeout);
-    restrictedVideoSkipTimeout = null;
-  }
-}
-
-// Listen for messages from YouTube iframe
-window.addEventListener("message", function (event) {
-  if (event.origin !== "https://www.youtube.com") return;
-
-  try {
-    const data = JSON.parse(event.data);
-    if (data.info) {
-      if (data.info.playerState === 0) {
-        // Video ended, play next if auto-next is enabled and more videos available
-        clearRestrictedVideoSkipTimer(); // Clear skip timer since video ended normally
-        if (autoNextEnabled) {
-          playNextVideo();
-        }
-      } else if (data.info.playerState === 1) {
-        // Video started playing, clear the restricted video skip timer
-        clearRestrictedVideoSkipTimer();
-      } else if (data.info.playerState === -1) {
-        // Video unstarted - wait a bit then check if it's actually restricted
-        setTimeout(() => {
-          // If still unstarted after 5 seconds, likely restricted
-          if (data.info.playerState === -1) {
-            startRestrictedVideoSkipTimer();
-          }
-        }, 5000);
-      }
-    }
-  } catch (error) {
-    // Handle parsing errors silently
-  }
-});
-
-// Listen for iframe load errors or restricted content
-function handleIframeLoad() {
-  // Don't start skip timer immediately on load
-  // Let the message listener handle player state detection
-}
-
-function findCurrentVideoIndex() {
-  return allLoadedVideos.findIndex(
-    (video) => video.id === currentPlayingVideoId
-  );
-}
-
-function playNextVideo() {
-  const currentIndex = findCurrentVideoIndex();
-
-  if (currentIndex === -1) {
-    return;
-  }
-
-  const nextIndex = currentIndex + 1;
-
-  // If we're at the end and still loading more videos, wait
-  if (nextIndex >= allLoadedVideos.length) {
-    if (hasMoreVideos && !isLoading) {
-      loadMoreVideos().then(() => {
-        // Try again after loading
-        setTimeout(() => playNextVideo(), 1000);
-      });
-      return;
-    } else if (!hasMoreVideos) {
-      // Optional: Loop back to first video
-      // switchVideo(allLoadedVideos[0].id, allLoadedVideos[0].title);
-      return;
-    }
-  }
-
-  const nextVideo = allLoadedVideos[nextIndex];
-  if (nextVideo) {
-    switchVideo(nextVideo.id, nextVideo.title);
-  }
-}
-
-function playPreviousVideo() {
-  const currentIndex = findCurrentVideoIndex();
-
-  if (currentIndex <= 0) {
-    return;
-  }
-
-  const previousVideo = allLoadedVideos[currentIndex - 1];
-  if (previousVideo) {
-    switchVideo(previousVideo.id, previousVideo.title);
-  }
-}
-
-function openVideoPlayer(videoId, title) {
-  if (!videoId) {
-    return;
-  }
-
-  currentPlayingVideoId = videoId;
-  currentPlayingVideoTitle = title;
-  currentVideoIndex = findCurrentVideoIndex();
-
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&showinfo=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
-
-  sideVideoFrame.src = embedUrl;
-  sideVideoFrame.onload = handleIframeLoad; // Set up load handler for restricted video detection
-  currentVideoTitle.textContent = title;
-
-  // Add keyboard controls info to current video info
-  const currentVideoInfo = document.getElementById("currentVideoInfo");
-  if (currentVideoInfo) {
-    // Remove existing keyboard info if present
-    const existingKeyboardInfo = currentVideoInfo.querySelector(
-      ".keyboard-controls-info"
+  // Get CSRF token for API requests
+  function getCSRFToken() {
+    return (
+      document.querySelector("[name=csrfmiddlewaretoken]")?.value ||
+      document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content") ||
+      ""
     );
-    if (existingKeyboardInfo) {
-      existingKeyboardInfo.remove();
+  }
+
+  function shareCurrentVideo() {
+    if (!currentVideoId) {
+      alert("No video selected.");
+      return;
     }
 
-    // Add keyboard controls info
-    const keyboardInfoHTML = `
+    const shareUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
+    const videoTitle = currentPlayingVideoTitle || "Check out this video";
+
+    if (navigator.share) {
+      navigator
+        .share({
+          title: videoTitle,
+          text: `Check out this video: ${videoTitle}`,
+          url: shareUrl,
+        })
+        .then(() => {
+          console.log("Video shared successfully");
+        })
+        .catch((error) => {
+          console.log("Sharing failed:", error);
+          // Fallback to clipboard
+          fallbackToClipboard(shareUrl);
+        });
+    } else {
+      // Fallback for browsers that don't support Web Share API
+      fallbackToClipboard(shareUrl);
+    }
+  }
+
+  // Fallback function to copy to clipboard
+  function fallbackToClipboard(shareUrl) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard
+        .writeText(shareUrl)
+        .then(() => {
+          showShareNotification("Video link copied to clipboard!");
+        })
+        .catch(() => {
+          legacyClipboardCopy(shareUrl);
+        });
+    } else {
+      legacyClipboardCopy(shareUrl);
+    }
+  }
+
+  // Legacy clipboard copy method
+  function legacyClipboardCopy(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      document.execCommand("copy");
+      showShareNotification("Video link copied to clipboard!");
+    } catch (err) {
+      showShareNotification(
+        "Unable to copy link. Please copy manually: " + text
+      );
+    }
+
+    document.body.removeChild(textArea);
+  }
+
+  // Show share notification
+  function showShareNotification(message) {
+    // Remove existing notification if any
+    const existingNotification = document.querySelector(".share-notification");
+    if (existingNotification) {
+      existingNotification.remove();
+    }
+
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = "share-notification";
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 10000;
+      animation: slideInRight 0.3s ease-out;
+    `;
+
+    // Add animation keyframes if not already present
+    if (!document.querySelector("#share-notification-styles")) {
+      const style = document.createElement("style");
+      style.id = "share-notification-styles";
+      style.textContent = `
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes slideOutRight {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    document.body.appendChild(notification);
+
+    // Auto-remove notification after 3 seconds
+    setTimeout(() => {
+      notification.style.animation = "slideOutRight 0.3s ease-in";
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 300);
+    }, 3000);
+  }
+
+  // Track video play
+  async function trackVideoPlay(videoId, title, channel = null) {
+    try {
+      const response = await fetch("/search/api/track-play/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCSRFToken(),
+        },
+        body: JSON.stringify({
+          video_id: videoId,
+          title: title,
+          channel: channel,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        console.log(`Video play tracked: ${title} (${data.play_count} plays)`);
+
+        // Update play count display if element exists
+        updatePlayCountDisplay(videoId, data.play_count);
+      } else {
+        console.warn("Failed to track video play:", data.error);
+      }
+    } catch (error) {
+      console.error("Error tracking video play:", error);
+    }
+  }
+
+  // Update play count display in UI
+  function updatePlayCountDisplay(videoId, playCount) {
+    const videoCards = document.querySelectorAll(
+      `[data-video-id="${videoId}"]`
+    );
+    videoCards.forEach((card) => {
+      let playCountElement = card.querySelector(".play-count");
+      if (!playCountElement) {
+        // Create play count element if it doesn't exist
+        const videoInfo = card.querySelector(".searched-video-info");
+        if (videoInfo) {
+          playCountElement = document.createElement("div");
+          playCountElement.className = "play-count";
+          playCountElement.style.cssText =
+            "font-size: 11px; color: #888; margin-top: 2px;";
+          videoInfo.appendChild(playCountElement);
+        }
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const currentVideos = document.querySelectorAll(
+      ".searched-video-card[data-video-id]"
+    );
+    currentVideos.forEach((video, index) => {
+      const videoId = video.getAttribute("data-video-id");
+      if (videoId) {
+        loadedVideoIds.add(videoId);
+        // Build initial video list for auto-next
+        const title =
+          video.querySelector(".searched-video-title")?.textContent ||
+          "Unknown Title";
+        const channel =
+          video.querySelector(".searched-video-meta span")?.textContent ||
+          "Unknown Channel";
+        allLoadedVideos.push({ id: videoId, title: title, channel: channel });
+      }
+    });
+  });
+
+  function highlightCurrentVideo(videoId) {
+    // Remove highlight from all videos
+    const allVideoCards = document.querySelectorAll(".searched-video-card");
+    allVideoCards.forEach((card) => {
+      card.classList.remove("currently-playing");
+    });
+
+    // Add highlight to current video
+    const currentVideoCards = document.querySelectorAll(
+      `[data-video-id="${videoId}"]`
+    );
+    currentVideoCards.forEach((card) => {
+      card.classList.add("currently-playing");
+    });
+  }
+
+  function startVideoEndDetection() {
+    // Clear any existing interval
+    if (videoEndCheckInterval) {
+      clearInterval(videoEndCheckInterval);
+    }
+
+    // Use postMessage API to communicate with YouTube iframe
+    videoEndCheckInterval = setInterval(() => {
+      if (sideVideoFrame.contentWindow) {
+        try {
+          sideVideoFrame.contentWindow.postMessage(
+            '{"event":"listening","id":"player"}',
+            "*"
+          );
+        } catch (error) {
+          // Silently handle cross-origin restrictions
+        }
+      }
+    }, 1000);
+  }
+
+  function stopVideoEndDetection() {
+    if (videoEndCheckInterval) {
+      clearInterval(videoEndCheckInterval);
+      videoEndCheckInterval = null;
+    }
+  }
+
+  function startRestrictedVideoSkipTimer() {
+    // Clear any existing timeout
+    if (restrictedVideoSkipTimeout) {
+      clearTimeout(restrictedVideoSkipTimeout);
+    }
+
+    // Set timeout to skip restricted video after 3 seconds
+    restrictedVideoSkipTimeout = setTimeout(() => {
+      if (currentPlayingVideoId && autoNextEnabled) {
+        playNextVideo();
+      }
+    }, 3000);
+  }
+
+  function clearRestrictedVideoSkipTimer() {
+    if (restrictedVideoSkipTimeout) {
+      clearTimeout(restrictedVideoSkipTimeout);
+      restrictedVideoSkipTimeout = null;
+    }
+  }
+
+  // Listen for messages from YouTube iframe
+  window.addEventListener("message", function (event) {
+    if (event.origin !== "https://www.youtube.com") return;
+
+    try {
+      const data = JSON.parse(event.data);
+      if (data.info) {
+        if (data.info.playerState === 0) {
+          // Video ended, play next if auto-next is enabled and more videos available
+          clearRestrictedVideoSkipTimer(); // Clear skip timer since video ended normally
+          if (autoNextEnabled) {
+            playNextVideo();
+          }
+        } else if (data.info.playerState === 1) {
+          // Video started playing, clear the restricted video skip timer
+          clearRestrictedVideoSkipTimer();
+
+          // Track video play when it starts playing (only once per video session)
+          if (
+            currentPlayingVideoId &&
+            currentPlayingVideoTitle &&
+            !hasTrackedCurrentVideo
+          ) {
+            trackVideoPlay(
+              currentPlayingVideoId,
+              currentPlayingVideoTitle,
+              currentPlayingVideoChannel
+            );
+            hasTrackedCurrentVideo = true;
+          }
+        } else if (data.info.playerState === -1) {
+          // Video unstarted - wait a bit then check if it's actually restricted
+          setTimeout(() => {
+            // If still unstarted after 5 seconds, likely restricted
+            if (data.info.playerState === -1) {
+              startRestrictedVideoSkipTimer();
+            }
+          }, 5000);
+        }
+      }
+    } catch (error) {
+      // Handle parsing errors silently
+    }
+  });
+
+  // Listen for iframe load errors or restricted content
+  function handleIframeLoad() {
+    // Don't start skip timer immediately on load
+    // Let the message listener handle player state detection
+  }
+
+  function findCurrentVideoIndex() {
+    return allLoadedVideos.findIndex(
+      (video) => video.id === currentPlayingVideoId
+    );
+  }
+
+  function playNextVideo() {
+    const currentIndex = findCurrentVideoIndex();
+
+    if (currentIndex === -1) {
+      return;
+    }
+
+    const nextIndex = currentIndex + 1;
+
+    // If we're at the end and still loading more videos, wait
+    if (nextIndex >= allLoadedVideos.length) {
+      if (hasMoreVideos && !isLoading) {
+        loadMoreVideos().then(() => {
+          // Try again after loading
+          setTimeout(() => playNextVideo(), 1000);
+        });
+        return;
+      } else if (!hasMoreVideos) {
+        // Optional: Loop back to first video
+        // switchVideo(allLoadedVideos[0].id, allLoadedVideos[0].title, allLoadedVideos[0].channel);
+        return;
+      }
+    }
+
+    const nextVideo = allLoadedVideos[nextIndex];
+    if (nextVideo) {
+      switchVideo(nextVideo.id, nextVideo.title, nextVideo.channel);
+    }
+  }
+
+  function playPreviousVideo() {
+    const currentIndex = findCurrentVideoIndex();
+
+    if (currentIndex <= 0) {
+      return;
+    }
+
+    const previousVideo = allLoadedVideos[currentIndex - 1];
+    if (previousVideo) {
+      switchVideo(previousVideo.id, previousVideo.title, previousVideo.channel);
+    }
+  }
+
+  function openVideoPlayer(videoId, title, channel = null) {
+    if (!videoId) {
+      return;
+    }
+
+    currentPlayingVideoId = videoId;
+    currentVideoId = videoId;
+    currentPlayingVideoTitle = title;
+    currentPlayingVideoChannel = channel;
+    currentVideoIndex = findCurrentVideoIndex();
+    hasTrackedCurrentVideo = false; // Reset tracking flag for new video
+
+    updatePageTitle(`${title} - ${originalQuery}`);
+
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&showinfo=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
+
+    sideVideoFrame.src = embedUrl;
+    sideVideoFrame.onload = handleIframeLoad; // Set up load handler for restricted video detection
+    currentVideoTitle.textContent = title;
+
+    // Add keyboard controls info to current video info
+    const currentVideoInfo = document.getElementById("currentVideoInfo");
+    if (currentVideoInfo) {
+      // Remove existing keyboard info if present
+      const existingKeyboardInfo = currentVideoInfo.querySelector(
+        ".keyboard-controls-info"
+      );
+      if (existingKeyboardInfo) {
+        existingKeyboardInfo.remove();
+      }
+
+      // Add keyboard controls info
+      const keyboardInfoHTML = `
         <div class="keyboard-controls-info" style="margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; font-size: 12px; color: #ccc;">
           <strong>Keyboard Controls:</strong><br>
           <span style="display: inline-block; margin-right: 15px;">🔄 <strong>Auto-Next:</strong> ON (plays next video automatically)</span><br>
@@ -227,35 +452,36 @@ function openVideoPlayer(videoId, title) {
           <span style="display: inline-block; margin-right: 15px;">⏮️ <strong>P:</strong> Previous video</span>
           <span style="display: inline-block; margin-right: 15px;">⏩ <strong>S:</strong> Skip restricted video</span>
           <span style="display: inline-block; margin-right: 15px;">❌ <strong>ESC:</strong> Close player</span><br>
-          <span style="display: inline-block; margin-right: 15px;">⏪⏩ <strong>← →:</strong> Seek backward/forward in video</span><br>
           <span style="font-size: 10px; color: #999;">💡 If video won't play due to restrictions, press 'S' to skip or wait for auto-skip (3s)</span>
         </div>
       `;
-    currentVideoInfo.insertAdjacentHTML("beforeend", keyboardInfoHTML);
-  }
-  sideVideoGrid.innerHTML = "";
-  sideLoadedVideoIds.clear(); // Reset side grid tracking
+      currentVideoInfo.insertAdjacentHTML("beforeend", keyboardInfoHTML);
+    }
+    sideVideoGrid.innerHTML = "";
+    sideLoadedVideoIds.clear(); // Reset side grid tracking
 
-  const currentVideos = videoGrid.querySelectorAll(".searched-video-card");
-  currentVideos.forEach((videoCard) => {
-    const videoId = videoCard.getAttribute("data-video-id");
-    const title = videoCard.querySelector(".searched-video-title").textContent;
-    const channelName = videoCard.querySelector(
-      ".searched-video-meta span"
-    ).textContent;
-    const publishedTime = videoCard.querySelector(
-      ".searched-video-meta span:last-child"
-    ).textContent;
-    const thumbnailImg = videoCard.querySelector(".searched-thumbnail-img");
-    const duration = videoCard.querySelector(".searched-video-duration");
+    const currentVideos = videoGrid.querySelectorAll(".searched-video-card");
+    currentVideos.forEach((videoCard) => {
+      const videoId = videoCard.getAttribute("data-video-id");
+      const title = videoCard.querySelector(
+        ".searched-video-title"
+      ).textContent;
+      const channelName = videoCard.querySelector(
+        ".searched-video-meta span"
+      ).textContent;
+      const publishedTime = videoCard.querySelector(
+        ".searched-video-meta span:last-child"
+      ).textContent;
+      const thumbnailImg = videoCard.querySelector(".searched-thumbnail-img");
+      const duration = videoCard.querySelector(".searched-video-duration");
 
-    sideLoadedVideoIds.add(videoId); // Track in side grid
+      sideLoadedVideoIds.add(videoId); // Track in side grid
 
-    const sideVideoHTML = `
+      const sideVideoHTML = `
         <div class="searched-video-card" data-video-id="${videoId}" onclick="switchVideo('${videoId}', '${title.replace(
-      /'/g,
-      "\\'"
-    )}')">
+        /'/g,
+        "\\'"
+      )}', '${channelName.replace(/'/g, "\\'")}')">
           <div class="searched-video-thumbnail">
             ${
               thumbnailImg
@@ -277,145 +503,155 @@ function openVideoPlayer(videoId, title) {
           </div>
         </div>
       `;
-    sideVideoGrid.insertAdjacentHTML("beforeend", sideVideoHTML);
-  });
+      sideVideoGrid.insertAdjacentHTML("beforeend", sideVideoHTML);
+    });
 
-  // Highlight the currently playing video
-  highlightCurrentVideo(currentPlayingVideoId);
+    // Highlight the currently playing video
+    highlightCurrentVideo(currentPlayingVideoId);
 
-  // Show split layout, hide original
-  originalLayout.style.display = "none";
-  splitLayout.style.display = "flex";
+    // Show split layout, hide original
+    originalLayout.style.display = "none";
+    splitLayout.style.display = "flex";
 
-  // Start monitoring for video end
-  startVideoEndDetection();
-}
-
-function switchVideo(videoId, title) {
-  if (!videoId) {
-    return;
+    // Start monitoring for video end
+    startVideoEndDetection();
   }
 
-  // Clear any existing skip timer when switching videos
-  clearRestrictedVideoSkipTimer();
+  function switchVideo(videoId, title, channel = null) {
+    if (!videoId) {
+      return;
+    }
 
-  currentPlayingVideoId = videoId;
-  currentPlayingVideoTitle = title;
-  currentVideoIndex = findCurrentVideoIndex();
+    // Clear any existing skip timer when switching videos
+    clearRestrictedVideoSkipTimer();
 
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&showinfo=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
-  sideVideoFrame.src = embedUrl;
-  sideVideoFrame.onload = handleIframeLoad; // Set up load handler for restricted video detection
-  currentVideoTitle.textContent = title;
+    currentPlayingVideoId = videoId;
+    currentVideoId = videoId;
+    currentPlayingVideoTitle = title;
+    currentPlayingVideoChannel = channel;
+    currentVideoIndex = findCurrentVideoIndex();
+    hasTrackedCurrentVideo = false; // Reset tracking flag for new video
 
-  // Highlight the currently playing video
-  highlightCurrentVideo(videoId);
+    updatePageTitle(`${title} - ${originalQuery}`);
 
-  // Restart video end detection for new video
-  startVideoEndDetection();
-}
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&showinfo=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
+    sideVideoFrame.src = embedUrl;
+    sideVideoFrame.onload = handleIframeLoad; // Set up load handler for restricted video detection
+    currentVideoTitle.textContent = title;
 
-function closeVideoPlayer() {
-  sideVideoFrame.src = "";
-  splitLayout.style.display = "none";
-  originalLayout.style.display = "block";
+    // Highlight the currently playing video
+    highlightCurrentVideo(videoId);
 
-  // Stop video end detection
-  stopVideoEndDetection();
-
-  // Clear restricted video skip timer
-  clearRestrictedVideoSkipTimer();
-
-  // Remove all highlights
-  const allVideoCards = document.querySelectorAll(".searched-video-card");
-  allVideoCards.forEach((card) => {
-    card.classList.remove("currently-playing");
-  });
-
-  currentPlayingVideoId = null;
-  currentPlayingVideoTitle = null;
-  currentVideoIndex = 0;
-  sideLoadedVideoIds.clear(); // Reset side grid tracking
-}
-
-function downloadCurrentVideo() {
-  if (currentPlayingVideoId && currentPlayingVideoTitle) {
-    downloadVideo(currentPlayingVideoId, currentPlayingVideoTitle);
-  } else {
-    alert("No video is currently playing");
-  }
-}
-
-// Keep all your existing functions
-function formatViewCount(count) {
-  if (!count) return "";
-
-  if (count >= 1000000) {
-    return (count / 1000000).toFixed(1) + "M";
-  } else if (count >= 1000) {
-    return (count / 1000).toFixed(1) + "K";
-  }
-  return count.toString();
-}
-
-function formatDuration(duration) {
-  if (!duration) return "";
-
-  const seconds = parseInt(duration);
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  const remainingSeconds = seconds % 60;
-
-  if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
-  }
-  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-}
-
-function downloadVideo(videoId, title) {
-  if (!videoId) {
-    alert("Video ID not available");
-    return;
+    // Restart video end detection for new video
+    startVideoEndDetection();
   }
 
-  const downloadUrl = `/search/download-video/?id=${videoId}&title=${encodeURIComponent(
-    title
-  )}`;
+  function closeVideoPlayer() {
+    sideVideoFrame.src = "";
+    splitLayout.style.display = "none";
+    originalLayout.style.display = "block";
 
-  const link = document.createElement("a");
-  link.href = downloadUrl;
-  link.download = `${title}.mp4`;
-  link.style.display = "none";
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-}
+    // Stop video end detection
+    stopVideoEndDetection();
 
-function createSideVideoCard(video) {
-  // Use separate tracking for side grid
-  if (sideLoadedVideoIds.has(video.id)) {
-    return null;
+    // Clear restricted video skip timer
+    clearRestrictedVideoSkipTimer();
+
+    // Remove all highlights
+    const allVideoCards = document.querySelectorAll(".searched-video-card");
+    allVideoCards.forEach((card) => {
+      card.classList.remove("currently-playing");
+    });
+
+    currentPlayingVideoId = null;
+    currentVideoId = null;
+    currentPlayingVideoTitle = null;
+    currentPlayingVideoChannel = null;
+    currentVideoIndex = 0;
+    hasTrackedCurrentVideo = false;
+    sideLoadedVideoIds.clear(); // Reset side grid tracking
+
+    resetPageTitle();
   }
 
-  sideLoadedVideoIds.add(video.id);
+  function downloadCurrentVideo() {
+    if (currentPlayingVideoId && currentPlayingVideoTitle) {
+      downloadVideo(currentPlayingVideoId, currentPlayingVideoTitle);
+    } else {
+      alert("No video is currently playing");
+    }
+  }
 
-  const duration = video.duration || "";
-  const channelName = video.channel ? video.channel.name : "Unknown Channel";
-  const publishedTime = video.publishedTime || "";
-  const thumbnailUrl =
-    video.thumbnails && video.thumbnails.length > 0
-      ? video.thumbnails[0].url
-      : "";
+  // Keep all your existing functions
+  function formatViewCount(count) {
+    if (!count) return "";
 
-  return `
+    if (count >= 1000000) {
+      return (count / 1000000).toFixed(1) + "M";
+    } else if (count >= 1000) {
+      return (count / 1000).toFixed(1) + "K";
+    }
+    return count.toString();
+  }
+
+  function formatDuration(duration) {
+    if (!duration) return "";
+
+    const seconds = parseInt(duration);
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = seconds % 60;
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds
+        .toString()
+        .padStart(2, "0")}`;
+    }
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  }
+
+  function downloadVideo(videoId, title) {
+    if (!videoId) {
+      alert("Video ID not available");
+      return;
+    }
+
+    const downloadUrl = `/search/download-video/?id=${videoId}&title=${encodeURIComponent(
+      title
+    )}`;
+
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = `${title}.mp4`;
+    link.style.display = "none";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  function createSideVideoCard(video) {
+    // Use separate tracking for side grid
+    if (sideLoadedVideoIds.has(video.id)) {
+      return null;
+    }
+
+    sideLoadedVideoIds.add(video.id);
+
+    const duration = video.duration || "";
+    const channelName = video.channel ? video.channel.name : "Unknown Channel";
+    const publishedTime = video.publishedTime || "";
+    const thumbnailUrl =
+      video.thumbnails && video.thumbnails.length > 0
+        ? video.thumbnails[0].url
+        : "";
+
+    return `
       <div class="searched-video-card" data-video-id="${
         video.id
       }" onclick="switchVideo('${video.id}', '${video.title.replace(
-    /'/g,
-    "\\'"
-  )}')">
+      /'/g,
+      "\\'"
+    )}', '${channelName.replace(/'/g, "\\'")}')">
         <div class="searched-video-thumbnail">
           ${
             thumbnailUrl
@@ -438,44 +674,52 @@ function createSideVideoCard(video) {
         </div>
       </div>
     `;
-}
-
-function createVideoCard(video) {
-  if (loadedVideoIds.has(video.id)) {
-    return null;
   }
 
-  loadedVideoIds.add(video.id);
-
-  // Add to allLoadedVideos for auto-next functionality
-  allLoadedVideos.push({ id: video.id, title: video.title });
-
-  let viewCount = "";
-  if (video.shortViews) {
-    viewCount = video.shortViews;
-  } else if (video.viewCount) {
-    if (typeof video.viewCount === "object" && video.viewCount.simpleText) {
-      viewCount = formatViewCount(
-        parseInt(video.viewCount.simpleText.replace(/[^0-9]/g, ""))
-      );
-    } else if (typeof video.viewCount === "string") {
-      viewCount = video.viewCount;
+  function createVideoCard(video) {
+    if (loadedVideoIds.has(video.id)) {
+      return null;
     }
-  }
 
-  const duration = video.duration || "";
-  const channelName = video.channel ? video.channel.name : "Unknown Channel";
-  const publishedTime = video.publishedTime || "";
-  const thumbnailUrl =
-    video.thumbnails && video.thumbnails.length > 0
-      ? video.thumbnails[0].url
-      : "";
+    loadedVideoIds.add(video.id);
 
-  return `
+    const channelName = video.channel ? video.channel.name : "Unknown Channel";
+
+    // Add to allLoadedVideos for auto-next functionality
+    allLoadedVideos.push({
+      id: video.id,
+      title: video.title,
+      channel: channelName,
+    });
+
+    let viewCount = "";
+    if (video.shortViews) {
+      viewCount = video.shortViews;
+    } else if (video.viewCount) {
+      if (typeof video.viewCount === "object" && video.viewCount.simpleText) {
+        viewCount = formatViewCount(
+          parseInt(video.viewCount.simpleText.replace(/[^0-9]/g, ""))
+        );
+      } else if (typeof video.viewCount === "string") {
+        viewCount = video.viewCount;
+      }
+    }
+
+    const duration = video.duration || "";
+    const publishedTime = video.publishedTime || "";
+    const thumbnailUrl =
+      video.thumbnails && video.thumbnails.length > 0
+        ? video.thumbnails[0].url
+        : "";
+
+    return `
       <div class="searched-video-card" data-video-id="${video.id}">
         <div class="searched-video-thumbnail" onclick="openVideoPlayer('${
           video.id
-        }', '${video.title.replace(/'/g, "\\'")}')">
+        }', '${video.title.replace(/'/g, "\\'")}', '${channelName.replace(
+      /'/g,
+      "\\'"
+    )}')">
           ${
             thumbnailUrl
               ? `<img class="searched-thumbnail-img" src="${thumbnailUrl}" alt="${video.title}" loading="lazy" />`
@@ -517,191 +761,208 @@ function createVideoCard(video) {
         </div>
       </div>
     `;
-}
-
-async function loadMoreVideos() {
-  if (isLoading || !hasMoreVideos || !currentQuery) return;
-
-  isLoading = true;
-  const loadingSpinner = document.getElementById("loadingSpinner");
-  const sideLoadingSpinner = document.getElementById("sideLoadingSpinner");
-
-  // Show appropriate loading spinner
-  if (splitLayout.style.display === "flex") {
-    sideLoadingSpinner.style.display = "block";
-  } else {
-    loadingSpinner.style.display = "block";
   }
 
-  try {
-    const response = await fetch(
-      `/search/search-video/?q=${encodeURIComponent(
-        currentQuery
-      )}&page=${nextPage}`
-    );
+  async function loadMoreVideos() {
+    if (isLoading || !hasMoreVideos || !currentQuery) return;
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    isLoading = true;
+    const loadingSpinner = document.getElementById("loadingSpinner");
+    const sideLoadingSpinner = document.getElementById("sideLoadingSpinner");
+
+    // Show appropriate loading spinner
+    if (splitLayout.style.display === "flex") {
+      sideLoadingSpinner.style.display = "block";
+    } else {
+      loadingSpinner.style.display = "block";
     }
 
-    const data = await response.json();
+    try {
+      const response = await fetch(
+        `/search/search-video/?q=${encodeURIComponent(
+          currentQuery
+        )}&page=${nextPage}`
+      );
 
-    if (data.error) {
-      hasMoreVideos = false;
-      return;
-    }
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-    if (data.results && data.results.length > 0) {
-      let newVideosAdded = 0;
+      const data = await response.json();
 
-      data.results.forEach((video) => {
-        // Add to main grid
-        const videoCardHTML = createVideoCard(video);
-        if (videoCardHTML) {
-          videoGrid.insertAdjacentHTML("beforeend", videoCardHTML);
-          newVideosAdded++;
-        }
+      if (data.error) {
+        hasMoreVideos = false;
+        return;
+      }
 
-        // Add to side grid if it's visible
-        if (splitLayout.style.display === "flex") {
-          const sideVideoHTML = createSideVideoCard(video);
-          if (sideVideoHTML) {
-            sideVideoGrid.insertAdjacentHTML("beforeend", sideVideoHTML);
+      if (data.results && data.results.length > 0) {
+        let newVideosAdded = 0;
+
+        data.results.forEach((video) => {
+          // Add to main grid
+          const videoCardHTML = createVideoCard(video);
+          if (videoCardHTML) {
+            videoGrid.insertAdjacentHTML("beforeend", videoCardHTML);
+            newVideosAdded++;
           }
+
+          // Add to side grid if it's visible
+          if (splitLayout.style.display === "flex") {
+            const sideVideoHTML = createSideVideoCard(video);
+            if (sideVideoHTML) {
+              sideVideoGrid.insertAdjacentHTML("beforeend", sideVideoHTML);
+            }
+          }
+        });
+
+        // Re-highlight current video after adding new videos
+        if (currentPlayingVideoId) {
+          highlightCurrentVideo(currentPlayingVideoId);
         }
-      });
 
-      // Re-highlight current video after adding new videos
-      if (currentPlayingVideoId) {
-        highlightCurrentVideo(currentPlayingVideoId);
-      }
+        if (newVideosAdded > 0) {
+          nextPage++;
+        }
 
-      if (newVideosAdded > 0) {
-        nextPage++;
-      }
-
-      if (
-        data.has_more === false ||
-        data.results.length < 10 ||
-        newVideosAdded === 0
-      ) {
+        if (
+          data.has_more === false ||
+          data.results.length < 10 ||
+          newVideosAdded === 0
+        ) {
+          hasMoreVideos = false;
+        }
+      } else {
         hasMoreVideos = false;
       }
-    } else {
+    } catch (error) {
       hasMoreVideos = false;
+    } finally {
+      isLoading = false;
+      loadingSpinner.style.display = "none";
+      sideLoadingSpinner.style.display = "none";
     }
-  } catch (error) {
-    hasMoreVideos = false;
-  } finally {
-    isLoading = false;
-    loadingSpinner.style.display = "none";
-    sideLoadingSpinner.style.display = "none";
-  }
-}
-
-function handleContentAreaScroll() {
-  const contentArea = document.querySelector(".content-area");
-  const videoListSection = document.querySelector(".video-list-section");
-
-  // Handle scroll for split layout
-  if (splitLayout.style.display === "flex" && videoListSection) {
-    const scrollTop = videoListSection.scrollTop;
-    const scrollHeight = videoListSection.scrollHeight;
-    const clientHeight = videoListSection.clientHeight;
-
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-      loadMoreVideos();
-    }
-    return;
   }
 
-  // Handle scroll for original layout
-  if (!contentArea) return;
+  function handleContentAreaScroll() {
+    const contentArea = document.querySelector(".content-area");
+    const videoListSection = document.querySelector(".video-list-section");
 
-  const scrollTop = contentArea.scrollTop;
-  const scrollHeight = contentArea.scrollHeight;
-  const clientHeight = contentArea.clientHeight;
-
-  if (scrollTop + clientHeight >= scrollHeight - 100) {
-    loadMoreVideos();
-  }
-}
-
-function initializeScrollListener() {
-  const contentArea = document.querySelector(".content-area");
-  const videoListSection = document.querySelector(".video-list-section");
-
-  if (contentArea) {
-    contentArea.addEventListener("scroll", handleContentAreaScroll);
-  }
-
-  if (videoListSection) {
-    videoListSection.addEventListener("scroll", handleContentAreaScroll);
-  }
-
-  if (!contentArea && !videoListSection) {
-    window.addEventListener("scroll", function () {
-      const scrollTop =
-        document.documentElement.scrollTop || document.body.scrollTop;
-      const scrollHeight =
-        document.documentElement.scrollHeight || document.body.scrollHeight;
-      const clientHeight =
-        document.documentElement.clientHeight || window.innerHeight;
+    // Handle scroll for split layout
+    if (splitLayout.style.display === "flex" && videoListSection) {
+      const scrollTop = videoListSection.scrollTop;
+      const scrollHeight = videoListSection.scrollHeight;
+      const clientHeight = videoListSection.clientHeight;
 
       if (scrollTop + clientHeight >= scrollHeight - 100) {
         loadMoreVideos();
       }
-    });
-  }
-}
+      return;
+    }
 
-document.addEventListener("DOMContentLoaded", function () {
-  initializeScrollListener();
-});
+    // Handle scroll for original layout
+    if (!contentArea) return;
 
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initializeScrollListener);
-} else {
-  initializeScrollListener();
-}
+    const scrollTop = contentArea.scrollTop;
+    const scrollHeight = contentArea.scrollHeight;
+    const clientHeight = contentArea.clientHeight;
 
-// Keyboard shortcuts
-document.addEventListener("keydown", (e) => {
-  if (splitLayout.style.display === "flex") {
-    switch (e.key) {
-      case "Escape":
-        closeVideoPlayer();
-        break;
-      case "n":
-      case "N":
-        e.preventDefault();
-        playNextVideo();
-        break;
-      case "p":
-      case "P":
-        e.preventDefault();
-        playPreviousVideo();
-        break;
-      case "s":
-      case "S":
-        e.preventDefault();
-        playNextVideo();
-        break;
+    if (scrollTop + clientHeight >= scrollHeight - 100) {
+      loadMoreVideos();
     }
   }
-});
 
-// Expose functions for manual control (optional)
-window.videoPlayerControls = {
-  playNext: playNextVideo,
-  playPrevious: playPreviousVideo,
-  toggleAutoNext: function () {
-    autoNextEnabled = !autoNextEnabled;
-    return autoNextEnabled;
-  },
-  isAutoNextEnabled: function () {
-    return autoNextEnabled;
-  },
-};
+  function initializeScrollListener() {
+    const contentArea = document.querySelector(".content-area");
+    const videoListSection = document.querySelector(".video-list-section");
 
+    if (contentArea) {
+      contentArea.addEventListener("scroll", handleContentAreaScroll);
+    }
+
+    if (videoListSection) {
+      videoListSection.addEventListener("scroll", handleContentAreaScroll);
+    }
+
+    if (!contentArea && !videoListSection) {
+      window.addEventListener("scroll", function () {
+        const scrollTop =
+          document.documentElement.scrollTop || document.body.scrollTop;
+        const scrollHeight =
+          document.documentElement.scrollHeight || document.body.scrollHeight;
+        const clientHeight =
+          document.documentElement.clientHeight || window.innerHeight;
+
+        if (scrollTop + clientHeight >= scrollHeight - 100) {
+          loadMoreVideos();
+        }
+      });
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    initializeScrollListener();
+  });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initializeScrollListener);
+  } else {
+    initializeScrollListener();
+  }
+
+  // Keyboard shortcuts - Updated to ignore when typing in input fields
+  document.addEventListener("keydown", (e) => {
+    // Check if user is typing in an input field, textarea, or contenteditable element
+    const activeElement = document.activeElement;
+    const isTyping =
+      activeElement &&
+      (activeElement.tagName === "INPUT" ||
+        activeElement.tagName === "TEXTAREA" ||
+        activeElement.contentEditable === "true" ||
+        activeElement.isContentEditable);
+
+    // Only handle video player shortcuts if split layout is visible AND user is not typing
+    if (splitLayout.style.display === "flex" && !isTyping) {
+      switch (e.key) {
+        case "Escape":
+          closeVideoPlayer();
+          break;
+        case "n":
+        case "N":
+          e.preventDefault();
+          playNextVideo();
+          break;
+        case "p":
+        case "P":
+          e.preventDefault();
+          playPreviousVideo();
+          break;
+        case "s":
+        case "S":
+          e.preventDefault();
+          playNextVideo();
+          break;
+      }
+    }
+  });
+
+  // Expose functions for manual control (optional)
+  window.videoPlayerControls = {
+    playNext: playNextVideo,
+    playPrevious: playPreviousVideo,
+    toggleAutoNext: function () {
+      autoNextEnabled = !autoNextEnabled;
+      return autoNextEnabled;
+    },
+    isAutoNextEnabled: function () {
+      return autoNextEnabled;
+    },
+    trackPlay: trackVideoPlay,
+    getCurrentVideo: function () {
+      return {
+        id: currentPlayingVideoId,
+        title: currentPlayingVideoTitle,
+        channel: currentPlayingVideoChannel,
+      };
+    },
+  };
 </script>
