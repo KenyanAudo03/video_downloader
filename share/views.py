@@ -11,6 +11,7 @@ from .models import CachedVideo
 
 logger = logging.getLogger(__name__)
 
+
 # Format duration before save
 def format_duration(duration_str):
     if not duration_str or duration_str == "N/A":
@@ -319,7 +320,8 @@ def shared_link(request, video_id):
     )
     if not all(c in allowed_chars for c in video_id):
         raise Http404("Invalid video ID format")
-    youtube_api_key = getattr(settings, "YOUTUBE_API_KEY", None)
+    youtube_api_key = getattr(settings, "SHARE_YOUTUBE_API_KEY", None)
+
     video_info = None
     related_videos = []
     api_used = False
