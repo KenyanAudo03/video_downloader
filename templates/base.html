@@ -6,19 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}VideoFlow{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/base.css' %}" />
-    <link
-      href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdn.boxicons.com/fonts/brands/boxicons-brands.min.css"
-      rel="stylesheet"
-    />
-    <link
-      rel="icon"
-      type="image/x-icon"
-      href="{% static 'images/default_images/favicon.png' %}"
-    />
+    <link href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css" rel="stylesheet" />
+    <link href="https://cdn.boxicons.com/fonts/brands/boxicons-brands.min.css" rel="stylesheet" />
+    <link rel="icon" type="image/x-icon" href="{% static 'images/default_images/favicon.png' %}" />
   </head>
   <body>
     <!-- Header -->
@@ -37,7 +27,7 @@
           method="get"
           style="width: 100%"
         >
-          <div class="search-wrapper">
+          <div class="search-wrapper" id="searchWrapper">
             <input
               type="text"
               name="q"
@@ -50,22 +40,11 @@
             <span class="clear-icon" id="clearSearch">
               <i class="bx bx-x"></i>
             </span>
-            <div
-              id="suggestionsBox"
-              class="suggestions"
-              style="display: none"
-            ></div>
+            <div id="suggestionsBox" class="suggestions" style="display: none"></div>
             <button class="search-btn" id="searchBtn" type="submit">
-              <div
-                class="spinner"
-                id="searchSpinner"
-                style="display: none"
-              ></div>
+              <div class="spinner" id="searchSpinner" style="display: none"></div>
               <span id="searchIcon">
-                <i
-                  class="bx bx-search"
-                  style="color: #fff; font-size: 25px"
-                ></i>
+                <i class="bx bx-search" style="color: #fff; font-size: 25px"></i>
               </span>
             </button>
           </div>
@@ -94,6 +73,7 @@
         const box = document.getElementById("suggestionsBox");
         const form = document.getElementById("searchForm");
         const clearBtn = document.getElementById("clearSearch");
+        const wrapper = document.getElementById("searchWrapper");
         let debounceTimer;
 
         const toggleClearIcon = () => {
@@ -142,7 +122,8 @@
           }, 300);
         });
 
-        clearBtn.addEventListener("click", () => {
+        clearBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
           input.value = "";
           box.style.display = "none";
           clearBtn.style.display = "none";
@@ -156,10 +137,11 @@
           }
         });
 
-        input.addEventListener("blur", () => {
-          setTimeout(() => {
+        document.addEventListener("click", (event) => {
+          const isClickInside = wrapper.contains(event.target);
+          if (!isClickInside) {
             box.style.display = "none";
-          }, 200);
+          }
         });
       });
     </script>
