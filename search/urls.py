@@ -15,4 +15,5 @@ urlpatterns = [
         name="video_metadata",
     ),
     path("suggest/", views.suggest_videos, name="suggest_videos"),
+    path("api/track-play/", views.track_video_play, name="track_video_play"),
 ]
