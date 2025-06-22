@@ -99,7 +99,7 @@ def search_video(request):
     if request.method == "GET":
         query = request.GET.get("q", "").strip()
         page = int(request.GET.get("page", 1))
-        limit = int(request.GET.get("limit", 20))  # bump it up, default to 20
+        limit = int(request.GET.get("limit", 20))
 
         if not query:
             return JsonResponse({"error": "No query provided"}, status=400)
@@ -107,18 +107,39 @@ def search_video(request):
         try:
             videosSearch = VideosSearch(query, limit=limit)
 
+            # Navigate to the requested page
             for _ in range(page - 1):
-                videosSearch.next()
+                try:
+                    videosSearch.next()
+                except Exception as e:
+                    # Handle case where there are no more pages
+                    return JsonResponse(
+                        {
+                            "type": "search",
+                            "results": [],
+                            "platform": "youtube",
+                            "page": page,
+                            "has_more": False,
+                            "error": "No more pages available",
+                        }
+                    )
 
             search_result = videosSearch.result()
             results = search_result.get("result", [])
 
             processed_results = [process_video_data(video) for video in results]
 
-            has_more = (
-                len(results) == limit
-                and videosSearch.result().get("nextPageToken") is not None
-            )
+            # Check if there are more pages available
+            has_more = False
+            try:
+                # Try to peek at the next page to see if it exists
+                temp_search = VideosSearch(query, limit=limit)
+                for _ in range(page):
+                    temp_search.next()
+                next_result = temp_search.result()
+                has_more = len(next_result.get("result", [])) > 0
+            except:
+                has_more = False
 
             return JsonResponse(
                 {
