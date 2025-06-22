@@ -4,6 +4,10 @@ from youtubesearchpython import VideosSearch, Suggestions
 import re
 import json
 from django.views.decorators.csrf import csrf_exempt
+from .models import PlayedVideo
+from django.views.decorators.http import require_http_methods
+from django.core.paginator import Paginator
+from django.db.models import Q
 
 
 def format_view_count(view_count_text):
@@ -170,3 +174,45 @@ def suggest_videos(request):
         return JsonResponse({"suggestions": suggestions})
     except Exception as e:
         return JsonResponse({"error": str(e), "suggestions": []}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def track_video_play(request):
+    """
+    Track when a video is played
+    Expected JSON payload: {
+        "video_id": "youtube_video_id",
+        "title": "Video Title",
+        "channel": "Channel Name" (optional)
+    }
+    """
+    try:
+        data = json.loads(request.body)
+        video_id = data.get("video_id")
+        title = data.get("title")
+        channel = data.get("channel")
+
+        if not video_id or not title:
+            return JsonResponse(
+                {"success": False, "error": "video_id and title are required"},
+                status=400,
+            )
+
+        # Increment play count
+        video = PlayedVideo.increment_play_count(
+            video_id=video_id, title=title, channel=channel
+        )
+
+        return JsonResponse(
+            {
+                "success": True,
+                "play_count": video.play_count,
+                "video_id": video.video_id,
+            }
+        )
+
+    except json.JSONDecodeError:
+        return JsonResponse({"success": False, "error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
