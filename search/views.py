@@ -17,6 +17,9 @@ from django.utils.text import slugify
 from urllib.parse import unquote
 from django.http import HttpResponse, JsonResponse, FileResponse, Http404
 from django.conf import settings
+from django.core.validators import URLValidator
+from django.core.exceptions import ValidationError
+from urllib.parse import urlparse
 
 
 def format_view_count(view_count_text):
@@ -70,35 +73,43 @@ def process_video_data(video):
 
 
 def search_results(request):
-    """Handle search results and render results page"""
     query = request.GET.get("q", "").strip()
-
     if not query:
-        context = {"error": "No search query provided", "query": query}
-        return render(request, "search/search_results.html", context)
+        return render(
+            request,
+            "search/search_results.html",
+            {"error": "No search query provided", "query": query},
+        )
 
-    context = {"query": query}
-
+    is_url = False
+    validator = URLValidator()
     try:
-        # Search YouTube videos
-        videosSearch = VideosSearch(query, limit=20)
-        search_result = videosSearch.result()
-        results = search_result.get("result", [])
+        validator(query)
+        is_url = True
+    except ValidationError:
+        p = urlparse(query)
+        if p.scheme and p.netloc:
+            is_url = True
 
-        # Process video data to ensure proper formatting
-        processed_results = [process_video_data(video) for video in results]
+    if is_url:
+        # Extract video ID or relevant action
+        return render(request, "search/url_input.html", {"raw_url": query})
 
+    # Otherwise, treat as text search
+    context = {"query": query}
+    try:
+        videos = VideosSearch(query, limit=20).result().get("result", [])
+        processed = [process_video_data(v) for v in videos]
         context.update(
             {
                 "type": "search",
-                "results": processed_results,
-                "results_count": len(processed_results),
+                "results": processed,
+                "results_count": len(processed),
                 "platform": "youtube",
             }
         )
-
     except Exception as e:
-        context["error"] = f"Search failed: {str(e)}"
+        context["error"] = f"Search failed: {e}"
 
     return render(request, "search/search_results.html", context)
 
