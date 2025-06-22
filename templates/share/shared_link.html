@@ -1,0 +1,179 @@
+{% extends 'base.html' %} {% load static %} {% block title %}
+{{ video_info.snippet.title }} {% endblock %} {% block content %}
+<link rel="stylesheet" href="{% static 'css/search/search_results.css' %}" />
+<style>
+  .button-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: -10px;
+  }
+</style>
+<div class="video-app-container">
+  <div class="split-layout" id="splitLayout">
+    <div class="video-player-section" style="margin-bottom: 20px">
+      <div class="video-player-container">
+        <span class="close-player" onclick="closeVideoPlayer()">×</span>
+        <iframe
+          id="sideVideoFrame"
+          allowfullscreen
+          allow="autoplay; encrypted-media; picture-in-picture"
+          frameborder="0"
+          src="{{ youtube_embed_url }}?autoplay=1&mute=1"
+        ></iframe>
+      </div>
+      <div class="current-video-info" id="currentVideoInfo">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h3 id="currentVideoTitle" style="margin: 0; flex: 1">
+            {{ video_info.snippet.title|truncatechars:45}}
+          </h3>
+          <span
+            id="currentVideoPublishTime"
+            style="
+              font-size: 14px;
+              color: #888;
+              margin-left: 15px;
+              white-space: nowrap;
+            "
+          >
+            {% if published_time_ago %} {{ published_time_ago }} {% else %}
+            Unknown date {% endif %}
+          </span>
+        </div>
+      </div>
+      <!-- Container for buttons -->
+      <div class="button-group">
+        <!-- Download Video Button -->
+        <button
+          class="current-video-download-btn"
+          onclick="downloadCurrentVideo()"
+        >
+          <svg class="download-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+          Download Video
+        </button>
+
+        <!-- Download Audio Button -->
+        <button
+          class="current-video-download-btn"
+          onclick="downloadCurrentAudio()"
+        >
+          <svg class="download-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+          Download Audio
+        </button>
+
+        <!-- Share Button -->
+        <button
+          class="current-video-download-btn"
+          onclick="shareCurrentVideo()"
+        >
+          <svg class="download-icon" fill="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.49 2.49 0 000-1.39l7.05-4.11A2.5 2.5 0 0018 7.91a2.5 2.5 0 10-2.5-2.5c0 .36.07.7.2 1.02L8.65 10.2a2.5 2.5 0 100 3.6l7.05 4.11c-.13.32-.2.66-.2 1.02a2.5 2.5 0 102.5-2.5z"
+            />
+          </svg>
+          Share
+        </button>
+      </div>
+      <div
+        class="keyboard-controls-info"
+        style="
+          margin-top: 10px;
+          padding: 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          font-size: 12px;
+          color: #ccc;
+        "
+      >
+        <strong>Keyboard Controls:</strong><br />
+        <span style="display: inline-block; margin-right: 15px"
+          >🔄 <strong>Auto-Next:</strong> ON (plays next video
+          automatically)</span
+        ><br />
+        <span style="display: inline-block; margin-right: 15px"
+          >⏭️ <strong>N:</strong> Next video</span
+        >
+        <span style="display: inline-block; margin-right: 15px"
+          >⏮️ <strong>P:</strong> Previous video</span
+        >
+        <span style="display: inline-block; margin-right: 15px"
+          >⏩ <strong>S:</strong> Skip restricted video</span
+        >
+        <span style="display: inline-block; margin-right: 15px"
+          >❌ <strong>ESC:</strong> Close player</span
+        ><br />
+        <span style="font-size: 10px; color: #999"
+          >💡 If video won't play due to restrictions, press 'S' to skip or wait
+          for auto-skip (3s)</span
+        >
+      </div>
+    </div>
+
+    {% if related_videos %}
+    <div class="video-list-section">
+      <div class="searched-video-grid" id="sideVideoGrid">
+        {% for video in related_videos %}
+
+        <div
+          class="searched-video-card"
+          data-url="{% url 'shared_link' video.id %}"
+        >
+          <div class="searched-video-thumbnail">
+            <img
+              class="searched-thumbnail-img"
+              src="{{ video.thumbnail }}"
+              alt="{{ video.title }}"
+            />
+            <div class="searched-video-duration">
+              {{ video.duration|default:"N/A" }}
+            </div>
+          </div>
+          <div class="searched-video-info">
+            <h3 class="searched-video-title">{{ video.title }}</h3>
+            <div class="searched-video-meta">
+              <span>{{ video.channel_name|default:"Unknown Channel" }}</span>
+              <span>{{ video.published_time|default:"Unknown date" }}</span>
+            </div>
+          </div>
+        </div>
+
+        {% endfor %}
+      </div>
+    </div>
+
+    {% else %}
+    <div class="related-videos">
+      <h2>Related Videos</h2>
+      <p>No related videos found or unable to fetch related content.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<script>
+  document.querySelectorAll(".searched-video-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      const url = card.getAttribute("data-url");
+      window.location.href = url;
+    });
+  });
+</script>
+
+{% endblock %}
