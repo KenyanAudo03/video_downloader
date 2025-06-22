@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% load static %} {% block title %}
+{% extends 'base.html' %} {% load static %} {% block title %} 
 {{ video_info.snippet.title }} {% endblock %} {% block content %}
 <link rel="stylesheet" href="{% static 'css/search/search_results.css' %}" />
 <style>
@@ -11,15 +11,15 @@
 </style>
 <div class="video-app-container">
   <div class="split-layout" id="splitLayout">
-    <div class="video-player-section" style="margin-bottom: 20px">
+    <div class="video-player-section">
       <div class="video-player-container">
-        <span class="close-player" onclick="closeVideoPlayer()">×</span>
+        <span class="close-player" onclick="redirectToRoot()">×</span>
         <iframe
           id="sideVideoFrame"
           allowfullscreen
           allow="autoplay; encrypted-media; picture-in-picture"
           frameborder="0"
-          src="{{ youtube_embed_url }}?autoplay=1&mute=1"
+          src="{{ youtube_embed_url }}?autoplay=1"
         ></iframe>
       </div>
       <div class="current-video-info" id="currentVideoInfo">
@@ -92,41 +92,7 @@
           Share
         </button>
       </div>
-      <div
-        class="keyboard-controls-info"
-        style="
-          margin-top: 10px;
-          padding: 8px;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
-          font-size: 12px;
-          color: #ccc;
-        "
-      >
-        <strong>Keyboard Controls:</strong><br />
-        <span style="display: inline-block; margin-right: 15px"
-          >🔄 <strong>Auto-Next:</strong> ON (plays next video
-          automatically)</span
-        ><br />
-        <span style="display: inline-block; margin-right: 15px"
-          >⏭️ <strong>N:</strong> Next video</span
-        >
-        <span style="display: inline-block; margin-right: 15px"
-          >⏮️ <strong>P:</strong> Previous video</span
-        >
-        <span style="display: inline-block; margin-right: 15px"
-          >⏩ <strong>S:</strong> Skip restricted video</span
-        >
-        <span style="display: inline-block; margin-right: 15px"
-          >❌ <strong>ESC:</strong> Close player</span
-        ><br />
-        <span style="font-size: 10px; color: #999"
-          >💡 If video won't play due to restrictions, press 'S' to skip or wait
-          for auto-skip (3s)</span
-        >
-      </div>
     </div>
-
     {% if related_videos %}
     <div class="video-list-section">
       <div class="searched-video-grid" id="sideVideoGrid">
@@ -176,4 +142,129 @@
   });
 </script>
 
+<script>
+  function redirectToRoot() {
+    window.location.href = "/";
+  }
+  function shareCurrentVideo() {
+    const videoUrl = window.location.href;
+    const videoTitle = document
+      .getElementById("currentVideoTitle")
+      .textContent.trim();
+    if (navigator.share) {
+      navigator
+        .share({
+          title: videoTitle,
+          text: `Check out this video: ${videoTitle}`,
+          url: videoUrl,
+        })
+        .then(() => {
+          showNotification("Video shared successfully!");
+        })
+        .catch((error) => {
+          if (error.name !== "AbortError") {
+            fallbackShare(videoUrl, videoTitle);
+          }
+        });
+    } else {
+      // Fallback to copying URL to clipboard
+      fallbackShare(videoUrl, videoTitle);
+    }
+  }
+
+  // Fallback share method - copy to clipboard
+  function fallbackShare(url, title) {
+    if (navigator.clipboard) {
+      navigator.clipboard
+        .writeText(url)
+        .then(() => {
+          showNotification("Video URL copied to clipboard!");
+        })
+        .catch(() => {
+          showNotification("Unable to copy URL. Please copy manually.");
+        });
+    } else {
+      const textArea = document.createElement("textarea");
+      textArea.value = url;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        document.execCommand("copy");
+        showNotification("Video URL copied to clipboard!");
+      } catch (err) {
+        showNotification("Unable to copy URL. Please copy manually.");
+      }
+
+      document.body.removeChild(textArea);
+    }
+  }
+
+  // Show notification function
+  function showNotification(message) {
+    // Create notification element
+    const notification = document.createElement("div");
+    notification.className = "share-notification";
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #4CAF50;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 10000;
+      animation: slideInRight 0.3s ease-out;
+    `;
+
+    // Add animation keyframes if not already present
+    if (!document.querySelector("#share-notification-styles")) {
+      const style = document.createElement("style");
+      style.id = "share-notification-styles";
+      style.textContent = `
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes slideOutRight {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    document.body.appendChild(notification);
+
+    // Auto-remove notification after 3 seconds
+    setTimeout(() => {
+      notification.style.animation = "slideOutRight 0.3s ease-in";
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 300);
+    }, 3000);
+  }
+</script>
 {% endblock %}
