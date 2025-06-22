@@ -1,0 +1,19 @@
+<div class="url-processor">
+    <h3>Processing {{ platform|title }} URL</h3>
+    <p><strong>Original URL:</strong> {{ raw_url }}</p>
+    
+    {% if video_id %}
+        <p><strong>Video ID:</strong> {{ video_id }}</p>
+    {% endif %}
+    
+    {% if is_supported_platform %}
+        <div class="supported-platform">
+            <p>✅ This {{ platform }} URL is supported for processing</p>
+            <!-- Add your platform-specific processing logic here -->
+        </div>
+    {% else %}
+        <div class="unsupported-platform">
+            <p>⚠️ This URL format may have limited support</p>
+        </div>
+    {% endif %}
+</div>
