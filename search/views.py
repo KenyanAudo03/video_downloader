@@ -8,6 +8,15 @@ from .models import PlayedVideo
 from django.views.decorators.http import require_http_methods
 from django.core.paginator import Paginator
 from django.db.models import Q
+import os
+import tempfile
+import logging
+from django.views.decorators.http import require_GET
+import yt_dlp
+from django.utils.text import slugify
+from urllib.parse import unquote
+from django.http import HttpResponse, JsonResponse, FileResponse, Http404
+from django.conf import settings
 
 
 def format_view_count(view_count_text):
