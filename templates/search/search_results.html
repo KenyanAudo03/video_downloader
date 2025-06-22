@@ -23,9 +23,13 @@
           gap: 10px;
           flex-wrap: wrap;
         }
+
       </style>
       <div class="current-video-info" id="currentVideoInfo">
-        <h3 id="currentVideoTitle"></h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+  <h3 id="currentVideoTitle" style="margin: 0; flex: 1;"></h3>
+  <span id="currentVideoPublishTime" style="font-size: 14px; color: #888; margin-left: 15px; white-space: nowrap;"></span>
+</div>
 
         <!-- Container for buttons -->
         <div class="button-group">
