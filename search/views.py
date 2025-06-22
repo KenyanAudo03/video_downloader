@@ -20,6 +20,7 @@ from django.conf import settings
 from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from urllib.parse import urlparse
+import requests
 
 
 def format_view_count(view_count_text):
@@ -72,6 +73,88 @@ def process_video_data(video):
     return processed_video
 
 
+def extract_youtube_id(url):
+    """Extract YouTube video ID from various YouTube URL formats"""
+    patterns = [
+        r"(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|music\.youtube\.com\/watch\?v=)([^&\n?#]+)",
+        r"(?:localhost|127\.0\.0\.1).*?\/([a-zA-Z0-9_-]{11})",  # For localhost URLs with video ID
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, url)
+        if match:
+            return match.group(1)
+    return None
+
+
+def get_video_metadata(video_id):
+    """Get video metadata using multiple fallback methods"""
+    try:
+        # Method 1: Try using YouTube oEmbed API
+        import json
+
+        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+        response = requests.get(oembed_url, timeout=5)
+
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                "title": data.get("title", f"Video {video_id}"),
+                "published": "Unknown Date",  # oEmbed doesn't provide this
+                "duration": "Unknown Duration",  # oEmbed doesn't provide this
+                "views": "Unknown Views",  # oEmbed doesn't provide this
+                "channel": data.get("author_name", "Unknown Channel"),
+                "thumbnail": data.get(
+                    "thumbnail_url",
+                    f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+                ),
+            }
+    except Exception as e:
+        print(f"oEmbed method failed: {e}")
+
+    try:
+        # Method 2: Try searching for a similar video using the video ID
+        search = VideosSearch(video_id, limit=5)
+        results = search.result().get("result", [])
+
+        # Look for exact match by checking if video ID is in the URL
+        for video in results:
+            video_url = video.get("link", "")
+            if video_id in video_url:
+                return {
+                    "title": video.get("title", f"Video {video_id}"),
+                    "published": video.get("publishedTime", "Unknown Date"),
+                    "duration": video.get("duration", "Unknown Duration"),
+                    "views": video.get("viewCount", {}).get("text", "Unknown Views"),
+                    "channel": video.get("channel", {}).get("name", "Unknown Channel"),
+                    "thumbnail": video.get("thumbnails", [{}])[-1].get("url", ""),
+                }
+    except Exception as e:
+        print(f"Search method failed: {e}")
+
+    # Method 3: Fallback metadata with video ID
+    return {
+        "title": f"Video {video_id}",
+        "published": "Unknown Date",
+        "duration": "Unknown Duration",
+        "views": "Unknown Views",
+        "channel": "Unknown Channel",
+        "thumbnail": f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+    }
+
+
+def detect_platform(url):
+    """Detect the platform from URL"""
+    if "youtube.com" in url or "youtu.be" in url:
+        return "youtube"
+    elif "music.youtube.com" in url:
+        return "youtube_music"
+    elif "localhost" in url or "127.0.0.1" in url:
+        return "localhost"
+    else:
+        return "unknown"
+
+
 def search_results(request):
     query = request.GET.get("q", "").strip()
     if not query:
@@ -92,14 +175,35 @@ def search_results(request):
             is_url = True
 
     if is_url:
-        # Extract video ID or relevant action
-        return render(request, "search/url_input.html", {"raw_url": query})
+        # Process URL
+        platform = detect_platform(query)
+        video_id = extract_youtube_id(query)
+
+        context = {
+            "raw_url": query,
+            "platform": platform,
+            "video_id": video_id,
+            "is_supported_platform": platform
+            in ["youtube", "youtube_music", "localhost"],
+        }
+
+        # Get video metadata if we have a video ID
+        if video_id and context["is_supported_platform"]:
+            try:
+                context["video_metadata"] = get_video_metadata(video_id)
+            except Exception as e:
+                print(f"Error getting video metadata: {e}")
+                context["metadata_error"] = f"Could not fetch video metadata: {str(e)}"
+
+        return render(request, "search/url_input.html", context)
 
     # Otherwise, treat as text search
     context = {"query": query}
     try:
         videos = VideosSearch(query, limit=20).result().get("result", [])
-        processed = [process_video_data(v) for v in videos]
+        processed = [
+            process_video_data(v) for v in videos if v
+        ]  # Filter out None values
         context.update(
             {
                 "type": "search",
@@ -109,9 +213,42 @@ def search_results(request):
             }
         )
     except Exception as e:
-        context["error"] = f"Search failed: {e}"
+        context["error"] = f"Search failed: {str(e)}"
 
     return render(request, "search/search_results.html", context)
+
+
+def process_video_data_url(video):
+    """Process video data from search results with safe extraction"""
+    if not video:
+        return None
+
+    try:
+        return {
+            "id": video.get("id", ""),
+            "title": video.get("title", "Unknown Title"),
+            "channel": (
+                video.get("channel", {}).get("name", "Unknown Channel")
+                if isinstance(video.get("channel"), dict)
+                else str(video.get("channel", "Unknown Channel"))
+            ),
+            "duration": video.get("duration", "Unknown Duration"),
+            "views": (
+                video.get("viewCount", {}).get("text", "Unknown Views")
+                if isinstance(video.get("viewCount"), dict)
+                else str(video.get("viewCount", "Unknown Views"))
+            ),
+            "published": video.get("publishedTime", "Unknown Date"),
+            "thumbnail": (
+                video.get("thumbnails", [{}])[-1].get("url", "")
+                if video.get("thumbnails")
+                else ""
+            ),
+            "url": video.get("link", ""),
+        }
+    except Exception as e:
+        print(f"Error processing video data: {e}")
+        return None
 
 
 def search_video(request):
@@ -147,7 +284,7 @@ def search_video(request):
             search_result = videosSearch.result()
             results = search_result.get("result", [])
 
-            processed_results = [process_video_data(video) for video in results]
+            processed_results = [process_video_data_url(video) for video in results]
 
             # Check if there are more pages available
             has_more = False
