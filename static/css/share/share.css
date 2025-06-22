@@ -1,0 +1,48 @@
+   .button-group {
+       display: flex;
+       gap: 10px;
+       flex-wrap: wrap;
+       margin-top: -10px;
+   }
+
+   .related-videos {
+       padding: 40px 20px;
+       text-align: center;
+       background: #303030;
+       border-radius: 12px;
+       margin: 20px;
+       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+       border: 1px solid #606060;
+   }
+
+   .related-videos h2 {
+       color: #ecf0f1;
+       font-size: 24px;
+       font-weight: 600;
+       margin: 0 0 16px 0;
+       letter-spacing: -0.5px;
+   }
+
+   .related-videos p {
+       color: #bdc3c7;
+       font-size: 16px;
+       line-height: 1.5;
+       margin: 0;
+       font-weight: 400;
+       opacity: 0.9;
+   }
+
+   @media (max-width: 768px) {
+       .related-videos {
+           margin: 15px;
+           padding: 30px 15px;
+       }
+
+       .related-videos h2 {
+           font-size: 20px;
+       }
+
+       .related-videos p {
+           font-size: 14px;
+       }
+   }
