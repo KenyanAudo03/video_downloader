@@ -44,7 +44,7 @@
       return;
     }
 
-    const shareUrl = `${location.origin}/share/${currentVideoId}`;
+    const shareUrl = `${location.origin}/${currentVideoId}`;
     const videoTitle = currentPlayingVideoTitle || "Check out this video";
 
     if (navigator.share) {
