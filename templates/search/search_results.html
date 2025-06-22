@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% load static %} {% block title %}{{ query }}
+{% extends 'base.html' %} {% load static %} {% block title %}{{ query }} 
 {% endblock %} {% block content %}
 <link rel="stylesheet" href="{% static 'css/search/search_results.css' %}" />
 <div class="video-app-container">
@@ -13,27 +13,65 @@
         <iframe
           id="sideVideoFrame"
           allowfullscreen
-          allow="autoplay; encrypted-media"
+          allow="autoplay; encrypted-media; picture-in-picture"
           frameborder="0"
         ></iframe>
       </div>
+      <style>
+        .button-group {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+      </style>
       <div class="current-video-info" id="currentVideoInfo">
         <h3 id="currentVideoTitle"></h3>
-        <!-- Download button for currently playing video -->
-        <button
-          class="current-video-download-btn"
-          id="currentVideoDownloadBtn"
-          onclick="downloadCurrentVideo()"
-        >
-          <svg class="download-icon" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fill-rule="evenodd"
-              d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-              clip-rule="evenodd"
-            ></path>
-          </svg>
-          Download Video
-        </button>
+
+        <!-- Container for buttons -->
+        <div class="button-group">
+          <!-- Download Video Button -->
+          <button
+            class="current-video-download-btn"
+            onclick="downloadCurrentVideo()"
+          >
+            <svg class="download-icon" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            Download Video
+          </button>
+
+          <!-- Download Audio Button -->
+          <button
+            class="current-video-download-btn"
+            onclick="downloadCurrentAudio()"
+          >
+            <svg class="download-icon" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              ></path>
+            </svg>
+            Download Audio
+          </button>
+
+          <!-- Share Button -->
+          <button
+            class="current-video-download-btn"
+            onclick="shareCurrentVideo()"
+          >
+            <svg class="download-icon" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.49 2.49 0 000-1.39l7.05-4.11A2.5 2.5 0 0018 7.91a2.5 2.5 0 10-2.5-2.5c0 .36.07.7.2 1.02L8.65 10.2a2.5 2.5 0 100 3.6l7.05 4.11c-.13.32-.2.66-.2 1.02a2.5 2.5 0 102.5-2.5z"
+              />
+            </svg>
+            Share
+          </button>
+        </div>
       </div>
     </div>
     <div class="video-list-section">
@@ -111,5 +149,20 @@
   </div>
   {% endif %}
 </div>
+<script>
+  const originalQuery = "{{ query|escapejs }}";
+  function updatePageTitle(newTitle) {
+    const maxLength = 60;
+    let displayTitle = newTitle;
 
+    if (newTitle.length > maxLength) {
+      displayTitle = newTitle.substring(0, maxLength) + "...";
+    }
+
+    document.title = displayTitle;
+  }
+  function resetPageTitle() {
+    updatePageTitle(originalQuery);
+  }
+</script>
 {% include 'search/search_results_js.html' %} {% endblock %}
