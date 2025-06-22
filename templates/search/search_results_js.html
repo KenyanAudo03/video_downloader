@@ -44,7 +44,7 @@
       return;
     }
 
-    const shareUrl = `https://www.youtube.com/watch?v=${currentVideoId}`;
+    const shareUrl = `${location.origin}/share/${currentVideoId}`;
     const videoTitle = currentPlayingVideoTitle || "Check out this video";
 
     if (navigator.share) {
@@ -420,6 +420,21 @@
     currentPlayingVideoId = videoId;
     currentVideoId = videoId;
     currentPlayingVideoTitle = title;
+    // Update publish time
+    const currentVideoCard = document.querySelector(
+      `[data-video-id="${videoId}"]`
+    );
+    const publishTimeElement = currentVideoCard?.querySelector(
+      ".searched-video-meta span:last-child"
+    );
+    const publishTime = publishTimeElement?.textContent || "";
+
+    const publishTimeDisplay = document.getElementById(
+      "currentVideoPublishTime"
+    );
+    if (publishTimeDisplay) {
+      publishTimeDisplay.textContent = publishTime;
+    }
     currentPlayingVideoChannel = channel;
     currentVideoIndex = findCurrentVideoIndex();
     hasTrackedCurrentVideo = false; // Reset tracking flag for new video
@@ -430,7 +445,8 @@
 
     sideVideoFrame.src = embedUrl;
     sideVideoFrame.onload = handleIframeLoad; // Set up load handler for restricted video detection
-    currentVideoTitle.textContent = title;
+    currentVideoTitle.textContent =
+      title.length > 45 ? title.substring(0, 45) + "..." : title;
 
     // Add keyboard controls info to current video info
     const currentVideoInfo = document.getElementById("currentVideoInfo");
@@ -528,6 +544,22 @@
     currentPlayingVideoId = videoId;
     currentVideoId = videoId;
     currentPlayingVideoTitle = title;
+    // Update publish time
+
+    const currentVideoCard = document.querySelector(
+      `[data-video-id="${videoId}"]`
+    );
+    const publishTimeElement = currentVideoCard?.querySelector(
+      ".searched-video-meta span:last-child"
+    );
+    const publishTime = publishTimeElement?.textContent || "";
+
+    const publishTimeDisplay = document.getElementById(
+      "currentVideoPublishTime"
+    );
+    if (publishTimeDisplay) {
+      publishTimeDisplay.textContent = publishTime;
+    }
     currentPlayingVideoChannel = channel;
     currentVideoIndex = findCurrentVideoIndex();
     hasTrackedCurrentVideo = false; // Reset tracking flag for new video
@@ -537,7 +569,8 @@
     const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&showinfo=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
     sideVideoFrame.src = embedUrl;
     sideVideoFrame.onload = handleIframeLoad; // Set up load handler for restricted video detection
-    currentVideoTitle.textContent = title;
+    currentVideoTitle.textContent =
+      title.length > 45 ? title.substring(0, 45) + "..." : title;
 
     // Highlight the currently playing video
     highlightCurrentVideo(videoId);
@@ -569,6 +602,13 @@
     currentPlayingVideoChannel = null;
     currentVideoIndex = 0;
     hasTrackedCurrentVideo = false;
+    // Clear publish time display
+    const publishTimeDisplay = document.getElementById(
+      "currentVideoPublishTime"
+    );
+    if (publishTimeDisplay) {
+      publishTimeDisplay.textContent = "";
+    }
     sideLoadedVideoIds.clear(); // Reset side grid tracking
 
     resetPageTitle();
