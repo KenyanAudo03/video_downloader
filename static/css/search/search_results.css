@@ -166,7 +166,7 @@
      margin: 0 0 12px 0;
      color: #fff;
      display: -webkit-box;
-     -webkit-line-clamp: 2;
+     -webkit-line-clamp: 1;
      -webkit-box-orient: vertical;
      overflow: hidden;
      text-overflow: ellipsis;
@@ -335,33 +335,32 @@
  .current-video-download-btn {
      display: flex;
      align-items: center;
-     gap: 8px;
-     background: linear-gradient(135deg, #ff6b6b, #ee5a52);
-     color: white;
+     gap: 6px;
+     background-color: #272727;
+     color: #f1f1f1;
      border: none;
-     padding: 12px 20px;
-     border-radius: 8px;
+     padding: 8px 14px;
+     border-radius: 18px;
      font-size: 14px;
-     font-weight: 600;
+     font-weight: 500;
      cursor: pointer;
-     transition: all 0.3s ease;
-     box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+     transition: background-color 0.2s ease;
  }
 
  .current-video-download-btn:hover {
-     background: linear-gradient(135deg, #ee5a52, #ff6b6b);
-     transform: translateY(-2px);
-     box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+     background-color: #3d3d3d;
  }
 
  .current-video-download-btn:active {
-     transform: translateY(0);
+     background-color: #4a4a4a;
  }
 
  .current-video-download-btn .download-icon {
-     width: 16px;
-     height: 16px;
+     width: 18px;
+     height: 18px;
+     fill: #f1f1f1;
  }
+
 
  .video-list-section {
      flex: 1;
