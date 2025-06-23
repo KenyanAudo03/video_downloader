@@ -552,10 +552,70 @@ def suggest_videos(request):
         return JsonResponse({"suggestions": []})
 
     try:
-        suggestions = Suggestions(language="en", region="US").get(query)
-        return JsonResponse({"suggestions": suggestions})
+        suggestions = []
+        try:
+            video_search = VideosSearch(query, limit=4)
+            video_results = video_search.result()
+
+            if video_results and "result" in video_results:
+                for video in video_results["result"]:
+                    # Get the best thumbnail
+                    thumbnail_url = ""
+                    if video.get("thumbnails") and len(video["thumbnails"]) > 0:
+                        # Get medium quality thumbnail
+                        thumbnails = video["thumbnails"]
+                        if len(thumbnails) > 1:
+                            thumbnail_url = thumbnails[1].get("url", "")
+                        else:
+                            thumbnail_url = thumbnails[0].get("url", "")
+
+                    suggestions.append(
+                        {
+                            "type": "video",
+                            "title": video.get("title", ""),
+                            "channel": (
+                                video.get("channel", {}).get("name", "")
+                                if video.get("channel")
+                                else ""
+                            ),
+                            "views": (
+                                video.get("viewCount", {}).get("text", "")
+                                if video.get("viewCount")
+                                else ""
+                            ),
+                            "thumbnail": thumbnail_url,
+                            "duration": video.get("duration", ""),
+                            "url": video.get("link", ""),
+                        }
+                    )
+        except Exception as video_error:
+            print(f"Video search error: {video_error}")
+
+        # Get text suggestions
+        try:
+            text_suggestions = Suggestions(language="en", region="US").get(query)
+
+            if text_suggestions and "result" in text_suggestions:
+                # Add text suggestions (limit to 3-4 to not overwhelm)
+                for suggestion in text_suggestions["result"][:4]:
+                    suggestions.append({"type": "text", "text": suggestion})
+        except Exception as text_error:
+            print(f"Text suggestions error: {text_error}")
+
+        # Ensure we have some suggestions
+        if not suggestions:
+            # Fallback: add basic text suggestion
+            suggestions.append({"type": "text", "text": query})
+
+        return JsonResponse(
+            {"suggestions": suggestions, "query": query, "count": len(suggestions)}
+        )
+
     except Exception as e:
-        return JsonResponse({"error": str(e), "suggestions": []}, status=500)
+        print(f"General error in suggest_videos: {str(e)}")
+        return JsonResponse(
+            {"error": str(e), "suggestions": [], "query": query}, status=500
+        )
 
 
 @csrf_exempt
