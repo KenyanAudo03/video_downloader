@@ -6,10 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}VideoFlow{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/base.css' %}" />
-    <link href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css" rel="stylesheet" />
-    <link href="https://cdn.boxicons.com/fonts/brands/boxicons-brands.min.css" rel="stylesheet" />
-    <link rel="icon" type="image/x-icon" href="{% static 'images/default_images/favicon.png' %}" />
-  </head>
+    <link
+      href="https://cdn.boxicons.com/fonts/basic/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.boxicons.com/fonts/brands/boxicons-brands.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{% static 'images/default_images/favicon.png' %}"
+    />
   <body>
     <!-- Header -->
     <div class="header">
@@ -33,18 +42,29 @@
               name="q"
               class="search-input"
               id="videoUrl"
-              placeholder="Search or enter url"
+              placeholder="Search videos..."
               autocomplete="off"
               value="{{ request.GET.q }}"
             />
             <span class="clear-icon" id="clearSearch">
               <i class="bx bx-x"></i>
             </span>
-            <div id="suggestionsBox" class="suggestions" style="display: none"></div>
+            <div
+              id="suggestionsBox"
+              class="suggestions"
+              style="display: none"
+            ></div>
             <button class="search-btn" id="searchBtn" type="submit">
-              <div class="spinner" id="searchSpinner" style="display: none"></div>
+              <div
+                class="spinner"
+                id="searchSpinner"
+                style="display: none"
+              ></div>
               <span id="searchIcon">
-                <i class="bx bx-search" style="color: #fff; font-size: 25px"></i>
+                <i
+                  class="bx bx-search"
+                  style="color: #fff; font-size: 25px"
+                ></i>
               </span>
             </button>
           </div>
@@ -74,10 +94,76 @@
         const form = document.getElementById("searchForm");
         const clearBtn = document.getElementById("clearSearch");
         const wrapper = document.getElementById("searchWrapper");
+        const searchBtn = document.getElementById("searchBtn");
+        const searchSpinner = document.getElementById("searchSpinner");
+        const searchIcon = document.getElementById("searchIcon");
         let debounceTimer;
 
         const toggleClearIcon = () => {
           clearBtn.style.display = input.value.trim() ? "block" : "none";
+        };
+
+        const showLoadingState = () => {
+          searchSpinner.style.display = "block";
+          searchIcon.style.display = "none";
+          searchBtn.disabled = true;
+        };
+
+        const hideLoadingState = () => {
+          searchSpinner.style.display = "none";
+          searchIcon.style.display = "block";
+          searchBtn.disabled = false;
+        };
+
+        const createVideoSuggestion = (video) => {
+          const suggestionElement = document.createElement("div");
+          suggestionElement.className = "suggestion-item";
+
+          const thumbnail = video.thumbnail || "";
+          const title = video.title || "";
+          const channel = video.channel || "";
+          const views = video.views || "";
+          const duration = video.duration || "";
+
+          suggestionElement.innerHTML = `
+            <div class="video-suggestion">
+              <div class="thumbnail-container">
+                <img src="${thumbnail}" alt="${title}" class="video-thumbnail" 
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div style="display: none; width: 60px; height: 45px; background: #333; border-radius: 4px; align-items: center; justify-content: center; color: #666; font-size: 12px;">
+                  No Image
+                </div>
+                ${
+                  duration
+                    ? `<span class="video-duration">${duration}</span>`
+                    : ""
+                }
+              </div>
+              <div class="video-info">
+                <div class="video-title">${title}</div>
+                <div class="video-meta">
+                  ${channel ? `<span>${channel}</span>` : ""}
+                  ${views ? `<span>• ${views}</span>` : ""}
+                </div>
+              </div>
+            </div>
+          `;
+
+          return suggestionElement;
+        };
+
+        const createTextSuggestion = (suggestion) => {
+          const suggestionElement = document.createElement("div");
+          suggestionElement.className = "suggestion-item";
+
+          suggestionElement.innerHTML = `
+            <div class="text-suggestion">
+              <i class="bx bx-search search-icon"></i>
+              <span class="suggestion-text">${suggestion.text}</span>
+            </div>
+          `;
+
+          return suggestionElement;
         };
 
         input.addEventListener("input", () => {
@@ -91,27 +177,45 @@
           }
 
           debounceTimer = setTimeout(() => {
-            fetch(`/search/suggest?q=${encodeURIComponent(query)}`)
-              .then((res) => res.json())
-              .then((data) => {
-                box.innerHTML = "";
-                const suggestions = data?.suggestions?.result || [];
+            console.log("Fetching suggestions for:", query); // Debug log
 
-                if (suggestions.length) {
+            fetch(`/search/suggest?q=${encodeURIComponent(query)}`)
+              .then((res) => {
+                console.log("Response status:", res.status); // Debug log
+                return res.json();
+              })
+              .then((data) => {
+                console.log("Received data:", data); // Debug log
+                box.innerHTML = "";
+                const suggestions = data?.suggestions || [];
+
+                if (suggestions.length > 0) {
                   box.style.display = "block";
-                  suggestions.forEach((suggestion) => {
-                    const div = document.createElement("div");
-                    div.className = "suggestion-item";
-                    div.textContent = suggestion;
-                    div.addEventListener("click", () => {
-                      input.value = suggestion;
+
+                  suggestions.forEach((item) => {
+                    let suggestionElement;
+
+                    if (item.type === "video") {
+                      suggestionElement = createVideoSuggestion(item);
+                    } else {
+                      suggestionElement = createTextSuggestion(item);
+                    }
+
+                    suggestionElement.addEventListener("click", (e) => {
+                      e.preventDefault();
+                      const searchValue = item.title || item.text || "";
+                      input.value = searchValue;
                       box.style.display = "none";
                       toggleClearIcon();
+
+                      // Submit the form
                       form.submit();
                     });
-                    box.appendChild(div);
+
+                    box.appendChild(suggestionElement);
                   });
                 } else {
+                  console.log("No suggestions received"); // Debug log
                   box.style.display = "none";
                 }
               })
@@ -132,7 +236,7 @@
 
         input.addEventListener("focus", () => {
           toggleClearIcon();
-          if (box.children.length) {
+          if (box.children.length > 0) {
             box.style.display = "block";
           }
         });
@@ -143,6 +247,14 @@
             box.style.display = "none";
           }
         });
+
+        // Handle form submission
+        form.addEventListener("submit", (e) => {
+          showLoadingState();
+        });
+
+        // Initialize clear button visibility
+        toggleClearIcon();
       });
     </script>
   </body>
