@@ -2,11 +2,6 @@
 {{ video_info.snippet.title }} {% endblock %} {% block content %}
 <link rel="stylesheet" href="{% static 'css/search/search_results.css' %}" />
 <link rel="stylesheet" href="{% static 'css/share/share.css' %}" />
-<style>
-  .video-player-container {
-    height: 70vh;
-  }
-</style>
 <div class="video-app-container">
   <div class="split-layout" id="splitLayout">
     <div class="video-player-section">
@@ -17,8 +12,9 @@
           allowfullscreen
           allow="autoplay; encrypted-media; picture-in-picture"
           frameborder="0"
-          src="{{ youtube_embed_url }}?autoplay=1&mute=1"
+          src="{{ youtube_embed_url }}?autoplay=1&mute=1&enablejsapi=1"
         ></iframe>
+        <div id="muteIndicator" class="mute-indicator"></div>
       </div>
       <div class="current-video-info" id="currentVideoInfo">
         <div
@@ -45,9 +41,7 @@
           </span>
         </div>
       </div>
-      <!-- Container for buttons -->
       <div class="button-group">
-        <!-- Download Video Button -->
         <button
           class="current-video-download-btn"
           onclick="downloadCurrentVideo()"
@@ -62,7 +56,6 @@
           Download Video
         </button>
 
-        <!-- Download Audio Button -->
         <button
           class="current-video-download-btn"
           onclick="downloadCurrentAudio()"
@@ -77,7 +70,6 @@
           Download Audio
         </button>
 
-        <!-- Share Button -->
         <button
           class="current-video-download-btn"
           onclick="shareCurrentVideo()"
@@ -131,19 +123,88 @@
     {% endif %}
   </div>
 </div>
+
+<div class="keyboard-hint">
+  Press <span class="kbd-key">M</span> to mute/unmute
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+
 <script>
+  let player;
+  let isMuted = true;
+
+  function onYouTubeIframeAPIReady() {
+    player = new YT.Player("sideVideoFrame", {
+      events: {
+        onReady: onPlayerReady,
+        onStateChange: onPlayerStateChange,
+      },
+    });
+  }
+
+  function onPlayerReady(event) {
+    console.log("YouTube player ready");
+  }
+
+  function onPlayerStateChange(event) {}
+
+  function toggleMute() {
+    if (!player || typeof player.isMuted !== "function") {
+      console.log("Player not ready yet");
+      return;
+    }
+
+    const muteIndicator = document.getElementById("muteIndicator");
+
+    if (player.isMuted()) {
+      player.unMute();
+      isMuted = false;
+      showMuteIndicator("🔊 Unmuted");
+    } else {
+      player.mute();
+      isMuted = true;
+      showMuteIndicator("🔇 Muted");
+    }
+  }
+
+  function showMuteIndicator(text) {
+    const indicator = document.getElementById("muteIndicator");
+    indicator.textContent = text;
+    indicator.classList.add("show");
+
+    setTimeout(() => {
+      indicator.classList.remove("show");
+    }, 1000);
+  }
+
+  function isInputActive() {
+    const activeElement = document.activeElement;
+    const inputTypes = ["input", "textarea", "select"];
+    return (
+      inputTypes.includes(activeElement.tagName.toLowerCase()) ||
+      activeElement.contentEditable === "true"
+    );
+  }
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key.toLowerCase() === "m" && !isInputActive()) {
+      event.preventDefault();
+      toggleMute();
+    }
+  });
+
   document.querySelectorAll(".searched-video-card").forEach((card) => {
     card.addEventListener("click", () => {
       const url = card.getAttribute("data-url");
       window.location.href = url;
     });
   });
-</script>
 
-<script>
   function redirectToRoot() {
     window.location.href = "/";
   }
+
   function shareCurrentVideo() {
     const videoUrl = window.location.href;
     const videoTitle = document
@@ -165,12 +226,10 @@
           }
         });
     } else {
-      // Fallback to copying URL to clipboard
       fallbackShare(videoUrl, videoTitle);
     }
   }
 
-  // Fallback share method - copy to clipboard
   function fallbackShare(url, title) {
     if (navigator.clipboard) {
       navigator.clipboard
@@ -202,9 +261,7 @@
     }
   }
 
-  // Show notification function
   function showNotification(message) {
-    // Create notification element
     const notification = document.createElement("div");
     notification.className = "share-notification";
     notification.textContent = message;
@@ -223,7 +280,6 @@
       animation: slideInRight 0.3s ease-out;
     `;
 
-    // Add animation keyframes if not already present
     if (!document.querySelector("#share-notification-styles")) {
       const style = document.createElement("style");
       style.id = "share-notification-styles";
@@ -254,7 +310,6 @@
 
     document.body.appendChild(notification);
 
-    // Auto-remove notification after 3 seconds
     setTimeout(() => {
       notification.style.animation = "slideOutRight 0.3s ease-in";
       setTimeout(() => {
