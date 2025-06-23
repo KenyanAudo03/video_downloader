@@ -263,7 +263,7 @@
          position: absolute;
          right: 70px;
          top: 50%;
-         transform: translateY(-50%);
+         transform: translateY(-40%);
          color: #aaa;
          font-size: 20px;
          cursor: pointer;
@@ -272,7 +272,6 @@
          display: none;
          transition: color 0.2s ease;
      }
-
      .clear-icon:hover {
          color: #fff;
      }
@@ -393,7 +392,7 @@
      }
 
 
-     .spinner {
+     .search-spinner {
          width: 20px;
          height: 20px;
          border: 2px solid #f3f3f3;
