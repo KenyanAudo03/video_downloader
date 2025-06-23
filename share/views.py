@@ -98,7 +98,7 @@ def get_cached_related_videos(category, exclude_video_id=None):
         query = CachedVideo.objects.filter(category=category)
         if exclude_video_id:
             query = query.exclude(video_id=exclude_video_id)
-        cached_videos = query.order_by("?")[:15]
+        cached_videos = query.order_by("?")[:21]
         related_videos = []
         for cached_video in cached_videos:
             related_videos.append(
@@ -147,7 +147,7 @@ def get_video_details_and_related(video_id, api_key):
             "part": "snippet",
             "type": "video",
             "videoCategoryId": category_id,
-            "maxResults": 20,
+            "maxResults": 21,
             "key": api_key,
             "order": "relevance",
         }
@@ -174,7 +174,7 @@ def get_video_details_and_related(video_id, api_key):
             details_url = f"https://www.googleapis.com/youtube/v3/videos"
             details_params = {
                 "part": "contentDetails,snippet",
-                "id": ",".join(video_ids[:15]),
+                "id": ",".join(video_ids[:21]),
                 "key": api_key,
             }
             details_response = requests.get(
@@ -224,7 +224,7 @@ def get_video_details_and_related(video_id, api_key):
                             "duration": duration_formatted,
                         }
                     )
-            return video_info, related_videos[:15]
+            return video_info, related_videos[:21]
         else:
             related_videos = get_cached_related_videos(category_id, video_id)
             return video_info, related_videos
