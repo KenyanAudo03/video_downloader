@@ -2,7 +2,11 @@
 {{ video_info.snippet.title }} {% endblock %} {% block content %}
 <link rel="stylesheet" href="{% static 'css/search/search_results.css' %}" />
 <link rel="stylesheet" href="{% static 'css/share/share.css' %}" />
-
+<style>
+  .video-player-container {
+    height: 70vh;
+  }
+</style>
 <div class="video-app-container">
   <div class="split-layout" id="splitLayout">
     <div class="video-player-section">
