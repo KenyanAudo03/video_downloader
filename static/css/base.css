@@ -202,6 +202,7 @@
          font-size: 16px;
          outline: none;
          transition: all 0.2s ease;
+         padding-right: 45px !important;
      }
 
      .search-input:focus {
