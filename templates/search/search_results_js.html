@@ -411,7 +411,24 @@
       switchVideo(previousVideo.id, previousVideo.title, previousVideo.channel);
     }
   }
+  function updateLoadingSpinners() {
+    const loadingSpinner = document.getElementById("loadingSpinner");
+    const sideLoadingSpinner = document.getElementById("sideLoadingSpinner");
 
+    if (splitLayout.style.display === "flex") {
+      // In split screen mode - hide main loader, show side loader if loading
+      if (loadingSpinner) loadingSpinner.style.display = "none";
+      if (sideLoadingSpinner && isLoading) {
+        sideLoadingSpinner.style.display = "block";
+      }
+    } else {
+      // In original layout - hide side loader, show main loader if loading
+      if (sideLoadingSpinner) sideLoadingSpinner.style.display = "none";
+      if (loadingSpinner && isLoading) {
+        loadingSpinner.style.display = "block";
+      }
+    }
+  }
   function openVideoPlayer(videoId, title, channel = null) {
     if (!videoId) {
       return;
@@ -420,6 +437,7 @@
     currentPlayingVideoId = videoId;
     currentVideoId = videoId;
     currentPlayingVideoTitle = title;
+
     // Update publish time
     const currentVideoCard = document.querySelector(
       `[data-video-id="${videoId}"]`
@@ -435,23 +453,23 @@
     if (publishTimeDisplay) {
       publishTimeDisplay.textContent = publishTime;
     }
+
     currentPlayingVideoChannel = channel;
     currentVideoIndex = findCurrentVideoIndex();
-    hasTrackedCurrentVideo = false; // Reset tracking flag for new video
+    hasTrackedCurrentVideo = false;
 
     updatePageTitle(`${title} - ${originalQuery}`);
 
     const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&showinfo=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
 
     sideVideoFrame.src = embedUrl;
-    sideVideoFrame.onload = handleIframeLoad; // Set up load handler for restricted video detection
+    sideVideoFrame.onload = handleIframeLoad;
     currentVideoTitle.textContent =
       title.length > 45 ? title.substring(0, 45) + "..." : title;
 
-    // Add keyboard controls info to current video info
+    // Add keyboard controls info
     const currentVideoInfo = document.getElementById("currentVideoInfo");
     if (currentVideoInfo) {
-      // Remove existing keyboard info if present
       const existingKeyboardInfo = currentVideoInfo.querySelector(
         ".keyboard-controls-info"
       );
@@ -459,22 +477,22 @@
         existingKeyboardInfo.remove();
       }
 
-      // Add keyboard controls info
       const keyboardInfoHTML = `
-        <div class="keyboard-controls-info" style="margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; font-size: 12px; color: #ccc;">
-          <strong>Keyboard Controls:</strong><br>
-          <span style="display: inline-block; margin-right: 15px;">🔄 <strong>Auto-Next:</strong> ON (plays next video automatically)</span><br>
-          <span style="display: inline-block; margin-right: 15px;">⏭️ <strong>N:</strong> Next video</span>
-          <span style="display: inline-block; margin-right: 15px;">⏮️ <strong>P:</strong> Previous video</span>
-          <span style="display: inline-block; margin-right: 15px;">⏩ <strong>S:</strong> Skip restricted video</span>
-          <span style="display: inline-block; margin-right: 15px;">❌ <strong>ESC:</strong> Close player</span><br>
-          <span style="font-size: 10px; color: #999;">💡 If video won't play due to restrictions, press 'S' to skip or wait for auto-skip (3s)</span>
-        </div>
-      `;
+      <div class="keyboard-controls-info" style="margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; font-size: 12px; color: #ccc;">
+        <strong>Keyboard Controls:</strong><br>
+        <span style="display: inline-block; margin-right: 15px;">🔄 <strong>Auto-Next:</strong> ON (plays next video automatically)</span><br>
+        <span style="display: inline-block; margin-right: 15px;">⏭️ <strong>N:</strong> Next video</span>
+        <span style="display: inline-block; margin-right: 15px;">⏮️ <strong>P:</strong> Previous video</span>
+        <span style="display: inline-block; margin-right: 15px;">⏩ <strong>S:</strong> Skip restricted video</span>
+        <span style="display: inline-block; margin-right: 15px;">❌ <strong>ESC:</strong> Close player</span><br>
+        <span style="font-size: 10px; color: #999;">💡 If video won't play due to restrictions, press 'S' to skip or wait for auto-skip (3s)</span>
+      </div>
+    `;
       currentVideoInfo.insertAdjacentHTML("beforeend", keyboardInfoHTML);
     }
+
     sideVideoGrid.innerHTML = "";
-    sideLoadedVideoIds.clear(); // Reset side grid tracking
+    sideLoadedVideoIds.clear();
 
     const currentVideos = videoGrid.querySelectorAll(".searched-video-card");
     currentVideos.forEach((videoCard) => {
@@ -491,48 +509,48 @@
       const thumbnailImg = videoCard.querySelector(".searched-thumbnail-img");
       const duration = videoCard.querySelector(".searched-video-duration");
 
-      sideLoadedVideoIds.add(videoId); // Track in side grid
+      sideLoadedVideoIds.add(videoId);
 
       const sideVideoHTML = `
-        <div class="searched-video-card" data-video-id="${videoId}" onclick="switchVideo('${videoId}', '${title.replace(
+      <div class="searched-video-card" data-video-id="${videoId}" onclick="switchVideo('${videoId}', '${title.replace(
         /'/g,
         "\\'"
       )}', '${channelName.replace(/'/g, "\\'")}')">
-          <div class="searched-video-thumbnail">
-            ${
-              thumbnailImg
-                ? `<img class="searched-thumbnail-img" src="${thumbnailImg.src}" alt="${title}" loading="lazy" />`
-                : '<div class="no-thumbnail">No thumbnail</div>'
-            }
-            ${
-              duration
-                ? `<div class="searched-video-duration">${duration.textContent}</div>`
-                : ""
-            }
-          </div>
-          <div class="searched-video-info">
-            <h3 class="searched-video-title">${title}</h3>
-            <div class="searched-video-meta">
-              <span>${channelName}</span>
-              <span>${publishedTime}</span>
-            </div>
+        <div class="searched-video-thumbnail">
+          ${
+            thumbnailImg
+              ? `<img class="searched-thumbnail-img" src="${thumbnailImg.src}" alt="${title}" loading="lazy" />`
+              : '<div class="no-thumbnail">No thumbnail</div>'
+          }
+          ${
+            duration
+              ? `<div class="searched-video-duration">${duration.textContent}</div>`
+              : ""
+          }
+        </div>
+        <div class="searched-video-info">
+          <h3 class="searched-video-title">${title}</h3>
+          <div class="searched-video-meta">
+            <span>${channelName}</span>
+            <span>${publishedTime}</span>
           </div>
         </div>
-      `;
+      </div>
+    `;
       sideVideoGrid.insertAdjacentHTML("beforeend", sideVideoHTML);
     });
 
-    // Highlight the currently playing video
     highlightCurrentVideo(currentPlayingVideoId);
 
     // Show split layout, hide original
     originalLayout.style.display = "none";
     splitLayout.style.display = "flex";
 
-    // Start monitoring for video end
+    // IMPORTANT: Update loading spinners after changing layout
+    updateLoadingSpinners();
+
     startVideoEndDetection();
   }
-
   function switchVideo(videoId, title, channel = null) {
     if (!videoId) {
       return;
@@ -584,13 +602,12 @@
     splitLayout.style.display = "none";
     originalLayout.style.display = "block";
 
-    // Stop video end detection
-    stopVideoEndDetection();
+    // IMPORTANT: Update loading spinners after changing layout
+    updateLoadingSpinners();
 
-    // Clear restricted video skip timer
+    stopVideoEndDetection();
     clearRestrictedVideoSkipTimer();
 
-    // Remove all highlights
     const allVideoCards = document.querySelectorAll(".searched-video-card");
     allVideoCards.forEach((card) => {
       card.classList.remove("currently-playing");
@@ -602,14 +619,14 @@
     currentPlayingVideoChannel = null;
     currentVideoIndex = 0;
     hasTrackedCurrentVideo = false;
-    // Clear publish time display
+
     const publishTimeDisplay = document.getElementById(
       "currentVideoPublishTime"
     );
     if (publishTimeDisplay) {
       publishTimeDisplay.textContent = "";
     }
-    sideLoadedVideoIds.clear(); // Reset side grid tracking
+    sideLoadedVideoIds.clear();
 
     resetPageTitle();
   }
@@ -670,6 +687,11 @@
   }
 
   function createSideVideoCard(video) {
+    if (!video || !video.id) {
+      console.warn("Invalid video data for side card:", video);
+      return null;
+    }
+
     // Use separate tracking for side grid
     if (sideLoadedVideoIds.has(video.id)) {
       return null;
@@ -678,62 +700,95 @@
     sideLoadedVideoIds.add(video.id);
 
     const duration = video.duration || "";
-    const channelName = video.channel ? video.channel.name : "Unknown Channel";
-    const publishedTime = video.publishedTime || "";
-    const thumbnailUrl =
-      video.thumbnails && video.thumbnails.length > 0
-        ? video.thumbnails[0].url
-        : "";
+
+    // Handle different channel data structures
+    let channelName = "Unknown Channel";
+    if (video.channel) {
+      if (typeof video.channel === "string") {
+        channelName = video.channel;
+      } else if (video.channel.name) {
+        channelName = video.channel.name;
+      }
+    }
+
+    const publishedTime = video.published || video.publishedTime || "";
+
+    // Handle thumbnail URL
+    let thumbnailUrl = "";
+    if (video.thumbnail) {
+      thumbnailUrl = video.thumbnail;
+    } else if (video.thumbnails && video.thumbnails.length > 0) {
+      thumbnailUrl = video.thumbnails[0].url;
+    }
+
+    const title = video.title || "Unknown Title";
 
     return `
-      <div class="searched-video-card" data-video-id="${
-        video.id
-      }" onclick="switchVideo('${video.id}', '${video.title.replace(
+    <div class="searched-video-card" data-video-id="${
+      video.id
+    }" onclick="switchVideo('${video.id}', '${title.replace(
       /'/g,
       "\\'"
     )}', '${channelName.replace(/'/g, "\\'")}')">
-        <div class="searched-video-thumbnail">
-          ${
-            thumbnailUrl
-              ? `<img class="searched-thumbnail-img" src="${thumbnailUrl}" alt="${video.title}" loading="lazy" />`
-              : '<div class="no-thumbnail">No thumbnail</div>'
-          }
-          ${
-            duration
-              ? `<div class="searched-video-duration">${duration}</div>`
-              : ""
-          }
-        </div>
-        
-        <div class="searched-video-info">
-          <h3 class="searched-video-title">${video.title}</h3>
-          <div class="searched-video-meta">
-            <span>${channelName}</span>
-            ${publishedTime ? `<span>${publishedTime}</span>` : ""}
-          </div>
+      <div class="searched-video-thumbnail">
+        ${
+          thumbnailUrl
+            ? `<img class="searched-thumbnail-img" src="${thumbnailUrl}" alt="${title}" loading="lazy" />`
+            : '<div class="no-thumbnail">No thumbnail</div>'
+        }
+        ${
+          duration
+            ? `<div class="searched-video-duration">${duration}</div>`
+            : ""
+        }
+      </div>
+      
+      <div class="searched-video-info">
+        <h3 class="searched-video-title">${title}</h3>
+        <div class="searched-video-meta">
+          <span>${channelName}</span>
+          ${publishedTime ? `<span>${publishedTime}</span>` : ""}
         </div>
       </div>
-    `;
+    </div>
+  `;
   }
 
   function createVideoCard(video) {
+    if (!video || !video.id) {
+      console.warn("Invalid video data:", video);
+      return null;
+    }
+
     if (loadedVideoIds.has(video.id)) {
+      console.log(`Video ${video.id} already loaded, skipping`);
       return null;
     }
 
     loadedVideoIds.add(video.id);
 
-    const channelName = video.channel ? video.channel.name : "Unknown Channel";
+    // Handle different channel data structures
+    let channelName = "Unknown Channel";
+    if (video.channel) {
+      if (typeof video.channel === "string") {
+        channelName = video.channel;
+      } else if (video.channel.name) {
+        channelName = video.channel.name;
+      }
+    }
 
     // Add to allLoadedVideos for auto-next functionality
     allLoadedVideos.push({
       id: video.id,
-      title: video.title,
+      title: video.title || "Unknown Title",
       channel: channelName,
     });
 
+    // Handle view count from different API response formats
     let viewCount = "";
-    if (video.shortViews) {
+    if (video.views && video.views !== "Unknown Views") {
+      viewCount = video.views;
+    } else if (video.shortViews) {
       viewCount = video.shortViews;
     } else if (video.viewCount) {
       if (typeof video.viewCount === "object" && video.viewCount.simpleText) {
@@ -746,68 +801,70 @@
     }
 
     const duration = video.duration || "";
-    const publishedTime = video.publishedTime || "";
-    const thumbnailUrl =
-      video.thumbnails && video.thumbnails.length > 0
-        ? video.thumbnails[0].url
-        : "";
+    const publishedTime = video.published || video.publishedTime || "";
+
+    // Handle thumbnail URL from different sources
+    let thumbnailUrl = "";
+    if (video.thumbnail) {
+      thumbnailUrl = video.thumbnail;
+    } else if (video.thumbnails && video.thumbnails.length > 0) {
+      thumbnailUrl = video.thumbnails[0].url;
+    }
+
+    const title = video.title || "Unknown Title";
 
     return `
-      <div class="searched-video-card" data-video-id="${video.id}">
-        <div class="searched-video-thumbnail" onclick="openVideoPlayer('${
-          video.id
-        }', '${video.title.replace(/'/g, "\\'")}', '${channelName.replace(
+    <div class="searched-video-card" data-video-id="${video.id}">
+      <div class="searched-video-thumbnail" onclick="openVideoPlayer('${
+        video.id
+      }', '${title.replace(/'/g, "\\'")}', '${channelName.replace(
       /'/g,
       "\\'"
     )}')">
-          ${
-            thumbnailUrl
-              ? `<img class="searched-thumbnail-img" src="${thumbnailUrl}" alt="${video.title}" loading="lazy" />`
-              : '<div class="no-thumbnail">No thumbnail</div>'
-          }
-          
-          ${
-            duration
-              ? `<div class="searched-video-duration">${duration}</div>`
-              : ""
-          }
-          ${
-            viewCount
-              ? `<div class="searched-video-views">${viewCount}${
-                  viewCount.includes("views") ? "" : " views"
-                }</div>`
-              : ""
-          }
-          
-          <div class="searched-play-overlay">
-            <div class="searched-play-icon"></div>
-          </div>
-        </div>
+        ${
+          thumbnailUrl
+            ? `<img class="searched-thumbnail-img" src="${thumbnailUrl}" alt="${title}" loading="lazy" />`
+            : '<div class="no-thumbnail">No thumbnail</div>'
+        }
         
-        <div class="searched-video-info">
-          <h3 class="searched-video-title">${video.title}</h3>
-          <div class="searched-video-meta">
-            <span>${channelName}</span>
-            ${publishedTime ? `<span>${publishedTime}</span>` : ""}
-          </div>
+        ${
+          duration
+            ? `<div class="searched-video-duration">${duration}</div>`
+            : ""
+        }
+        ${
+          viewCount
+            ? `<div class="searched-video-views">${viewCount}${
+                viewCount.includes("views") ? "" : " views"
+              }</div>`
+            : ""
+        }
+        
+        <div class="searched-play-overlay">
+          <div class="searched-play-icon"></div>
         </div>
       </div>
-    `;
+      
+      <div class="searched-video-info">
+        <h3 class="searched-video-title">${title}</h3>
+        <div class="searched-video-meta">
+          <span>${channelName}</span>
+          ${publishedTime ? `<span>${publishedTime}</span>` : ""}
+        </div>
+      </div>
+    </div>
+  `;
   }
 
   async function loadMoreVideos() {
-    if (isLoading || !hasMoreVideos || !currentQuery) return;
+    if (isLoading || !hasMoreVideos || !currentQuery) {
+      return;
+    }
 
     isLoading = true;
-    const loadingSpinner = document.getElementById("loadingSpinner");
-    const sideLoadingSpinner = document.getElementById("sideLoadingSpinner");
 
-    // Show appropriate loading spinner
-    if (splitLayout.style.display === "flex") {
-      sideLoadingSpinner.style.display = "block";
-    } else {
-      loadingSpinner.style.display = "block";
-    }
+    // Use the new function to properly manage spinners
+    updateLoadingSpinners();
 
     try {
       const response = await fetch(
@@ -823,6 +880,7 @@
       const data = await response.json();
 
       if (data.error) {
+        console.error("API Error:", data.error);
         hasMoreVideos = false;
         return;
       }
@@ -831,14 +889,17 @@
         let newVideosAdded = 0;
 
         data.results.forEach((video) => {
-          // Add to main grid
+          if (!video || !video.id) {
+            console.warn("Skipping invalid video:", video);
+            return;
+          }
+
           const videoCardHTML = createVideoCard(video);
           if (videoCardHTML) {
             videoGrid.insertAdjacentHTML("beforeend", videoCardHTML);
             newVideosAdded++;
           }
 
-          // Add to side grid if it's visible
           if (splitLayout.style.display === "flex") {
             const sideVideoHTML = createSideVideoCard(video);
             if (sideVideoHTML) {
@@ -847,7 +908,10 @@
           }
         });
 
-        // Re-highlight current video after adding new videos
+        console.log(
+          `Added ${newVideosAdded} new videos out of ${data.results.length} received`
+        );
+
         if (currentPlayingVideoId) {
           highlightCurrentVideo(currentPlayingVideoId);
         }
@@ -856,22 +920,25 @@
           nextPage++;
         }
 
-        if (
-          data.has_more === false ||
-          data.results.length < 10 ||
-          newVideosAdded === 0
-        ) {
+        if (data.has_more === false || newVideosAdded === 0) {
           hasMoreVideos = false;
+          console.log("No more videos available");
         }
       } else {
         hasMoreVideos = false;
+        console.log("No results returned from API");
       }
     } catch (error) {
+      console.error("Error loading more videos:", error);
       hasMoreVideos = false;
     } finally {
       isLoading = false;
-      loadingSpinner.style.display = "none";
-      sideLoadingSpinner.style.display = "none";
+
+      // Hide all loading spinners when done
+      const loadingSpinner = document.getElementById("loadingSpinner");
+      const sideLoadingSpinner = document.getElementById("sideLoadingSpinner");
+      if (loadingSpinner) loadingSpinner.style.display = "none";
+      if (sideLoadingSpinner) sideLoadingSpinner.style.display = "none";
     }
   }
 
