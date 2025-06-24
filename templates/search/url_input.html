@@ -2,6 +2,9 @@
 {{ video_metadata.title }} {% endblock %} {% block content %}
 <link rel="stylesheet" href="{% static 'css/search/search_results.css' %}" />
 <link rel="stylesheet" href="{% static 'css/search/url_input.css' %}" />
+
+{% if error and url_error %}
+{% else %}
 <div class="split-layout-screen">
   <div class="video-player-section">
     <div class="video-player-container">
@@ -253,4 +256,5 @@
     }, 3000);
   }
 </script>
+{% endif %}
 {% endblock %}
