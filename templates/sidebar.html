@@ -1,6 +1,9 @@
 <ul class="sidebar-links">
   <li class="sidebar-link">
-    <a href="/" class="link-home">
+    <a
+      href="/"
+      class="sidebar-link {% if request.path == '/' %}active{% endif %}"
+    >
       <i class="bx bx-home"></i>
       <span class="link-text">Home</span>
     </a>

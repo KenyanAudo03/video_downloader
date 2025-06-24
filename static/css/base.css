@@ -489,3 +489,21 @@
          margin: 12px 0;
          border: none;
      }
+
+     .sidebar-link.active {
+         background-color: #272727;
+         font-weight: 500;
+         border-radius: 10px;
+         color: #ffffff;
+     }
+
+     .sidebar-link.active::before {
+         content: "";
+         position: absolute;
+         left: -12px;
+         top: 0;
+         bottom: 0;
+         width: 3px;
+         background-color: #ff0000;
+         border-radius: 0 2px 2px 0;
+     }
