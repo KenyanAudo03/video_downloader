@@ -246,28 +246,10 @@ def get_video_metadata_by_id(video_id):
             )
 
             duration = format_duration(info.get("duration"))
-            
             upload_date = info.get("upload_date")
-            if upload_date and isinstance(upload_date, str) and len(upload_date) == 8:
-                try:
-                    year = int(upload_date[:4])
-                    month = int(upload_date[4:6])
-                    day = int(upload_date[6:8])
-                    date_obj = datetime(year, month, day)
-                    published = get_relative_time(date_obj)
-                except (ValueError, TypeError):
-                    published = "Unknown Date"
-            elif info.get("release_date"):
-                published = format_publish_date(info.get("release_date"))
-            elif info.get("timestamp"):
-                try:
-                    date_obj = datetime.fromtimestamp(info.get("timestamp"))
-                    published = get_relative_time(date_obj)
-                except (ValueError, TypeError, OSError):
-                    published = "Unknown Date"
-            else:
-                published = "Unknown Date"
-            
+            published = (
+                format_publish_date(upload_date) if upload_date else "Unknown Date"
+            )
             views = format_view_count_full(info.get("view_count"))
 
             return {
@@ -285,27 +267,7 @@ def get_video_metadata_by_id(video_id):
         print(f"yt-dlp method failed: {e}")
 
     try:
-        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
-        response = requests.get(oembed_url, timeout=10)
-
-        if response.status_code == 200:
-            data = response.json()
-            return {
-                "title": data.get("title", f"Video {video_id}"),
-                "published": "Unknown Date",
-                "duration": "Unknown Duration",
-                "views": "Unknown Views",
-                "channel": data.get("author_name", "Unknown Channel"),
-                "thumbnail": data.get(
-                    "thumbnail_url",
-                    f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
-                ),
-            }
-    except Exception as e:
-        print(f"oEmbed method failed: {e}")
-
-    try:
-        search = VideosSearch(video_id, limit=10)
+        search = VideosSearch(f"site:youtube.com {video_id}", limit=20)
         results = search.result().get("result", [])
 
         for video in results:
@@ -344,6 +306,82 @@ def get_video_metadata_by_id(video_id):
     except Exception as e:
         print(f"Search method failed: {e}")
 
+    try:
+        oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
+        response = requests.get(oembed_url, timeout=10)
+
+        if response.status_code == 200:
+            data = response.json()
+            return {
+                "title": data.get("title", f"Video {video_id}"),
+                "published": "Unknown Date",
+                "duration": "Unknown Duration",
+                "views": "Unknown Views",
+                "channel": data.get("author_name", "Unknown Channel"),
+                "thumbnail": data.get(
+                    "thumbnail_url",
+                    f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+                ),
+            }
+    except Exception as e:
+        print(f"oEmbed method failed: {e}")
+
+    try:
+        api_key = getattr(settings, "YOUTUBE_API_KEY", None)
+        if api_key:
+            api_url = f"https://www.googleapis.com/youtube/v3/videos"
+            params = {
+                "part": "snippet,statistics,contentDetails",
+                "id": video_id,
+                "key": api_key,
+            }
+
+            response = requests.get(api_url, params=params, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("items"):
+                    item = data["items"][0]
+                    snippet = item.get("snippet", {})
+                    statistics = item.get("statistics", {})
+                    content_details = item.get("contentDetails", {})
+
+                    published_at = snippet.get("publishedAt")
+                    published = (
+                        format_publish_date(published_at)
+                        if published_at
+                        else "Unknown Date"
+                    )
+
+                    duration_iso = content_details.get("duration")
+                    duration = (
+                        parse_iso_duration(duration_iso)
+                        if duration_iso
+                        else "Unknown Duration"
+                    )
+
+                    view_count = statistics.get("viewCount")
+                    views = (
+                        format_view_count_full(view_count)
+                        if view_count
+                        else "Unknown Views"
+                    )
+
+                    return {
+                        "title": snippet.get("title", f"Video {video_id}"),
+                        "published": published,
+                        "duration": duration,
+                        "views": views,
+                        "channel": snippet.get("channelTitle", "Unknown Channel"),
+                        "thumbnail": snippet.get("thumbnails", {})
+                        .get("maxresdefault", {})
+                        .get(
+                            "url",
+                            f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
+                        ),
+                    }
+    except Exception as e:
+        print(f"YouTube API method failed: {e}")
+
     return {
         "title": f"Video {video_id}",
         "published": "Unknown Date",
@@ -352,6 +390,27 @@ def get_video_metadata_by_id(video_id):
         "channel": "Unknown Channel",
         "thumbnail": f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
     }
+
+
+def parse_iso_duration(duration_str):
+    if not duration_str:
+        return "Unknown Duration"
+
+    try:
+        match = re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?", duration_str)
+        if not match:
+            return "Unknown Duration"
+
+        hours = int(match.group(1)) if match.group(1) else 0
+        minutes = int(match.group(2)) if match.group(2) else 0
+        seconds = int(match.group(3)) if match.group(3) else 0
+
+        if hours > 0:
+            return f"{hours}:{minutes:02d}:{seconds:02d}"
+        else:
+            return f"{minutes}:{seconds:02d}"
+    except:
+        return "Unknown Duration"
 
 
 def detect_platform(url):
