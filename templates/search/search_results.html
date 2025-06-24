@@ -1,4 +1,4 @@
-{% extends 'base.html' %} {% load static %} {% block title %}{{ query }} 
+{% extends 'base.html' %} {% load static %} {% block title %}{{ query }}  
 {% endblock %} {% block content %}
 <link rel="stylesheet" href="{% static 'css/search/search_results.css' %}" />
 <div class="video-app-container">
@@ -23,25 +23,24 @@
           gap: 10px;
           flex-wrap: wrap;
         }
-         .split-layout {
-       height: calc(100vh - 105px);
-   }
-   .video-player-section{
-    height: 100%;
-    
-   }
-   .video-player-container {
-       flex: 1;
-       width: 100%;
-       height: calc(100vh - 105px);
+        .split-layout {
+          height: calc(100vh - 105px);
+        }
+        .video-player-section {
+          height: calc(100vh - 85px);
+        }
+        .video-player-container {
+          flex: 1;
+          width: 100%;
+          /* height: calc(100vh - 105px); */
+          height: 100%;
+        }
 
-   }
-
-   .video-player-container iframe {
-       width: 100%;
-       height: 100%;
-       border: none;
-   }
+        .video-player-container iframe {
+          width: 100%;
+          height: 100%;
+          border: none;
+        }
       </style>
       <div class="current-video-info" id="currentVideoInfo">
         <div
@@ -144,8 +143,6 @@
           />
           {% endif %} {% if video.duration %}
           <div class="searched-video-duration">{{ video.duration }}</div>
-          {% endif %} {% if video.viewCount %}
-          <div class="searched-video-views">{{ video.viewCount.short }}</div>
           {% endif %}
 
           <div class="searched-play-overlay">
@@ -154,11 +151,11 @@
         </div>
 
         <div class="searched-video-info">
-          <h3 class="searched-video-title">{{ video.title }}</h3>
+          <div class="searched-video-title">{{ video.title }}</div>
           <div class="searched-video-meta">
-            <span>{{ video.channel.name }}</span>
+            <div class="searched-channel-name">{{ video.channel.name }}</div>
             {% if video.publishedTime %}
-            <span>{{ video.publishedTime }}</span>
+            <div class="searched-video-stats">{{ video.publishedTime }}</div>
             {% endif %}
           </div>
         </div>
