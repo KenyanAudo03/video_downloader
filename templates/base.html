@@ -83,7 +83,9 @@
     </div>
 
     <div class="main-content">
-      <div class="sidebar"></div>
+      <div class="sidebar">
+        {% include 'sidebar.html' %}
+      </div>
       <div class="content-area">{% block content %}{% endblock %}</div>
     </div>
 
