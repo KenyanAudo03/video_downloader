@@ -133,3 +133,6 @@ MEDIA_URL = "/media/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SHARE_YOUTUBE_API_KEY = config('YOUTUBE_API_KEY1')
+
+YOUTUBE_API_KEY_1  = config('YOUTUBE_API_KEY2')
+YOUTUBE_API_KEY_2 = config('YOUTUBE_API_KEY3')
