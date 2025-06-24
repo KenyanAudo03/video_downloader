@@ -45,16 +45,14 @@ def format_view_count(view_count_text):
 
 
 def format_duration(duration):
-    """Convert duration in seconds to MM:SS or HH:MM:SS format"""
     if not duration:
         return "Unknown Duration"
 
     try:
-        # Handle if duration is already a string with "seconds"
         if isinstance(duration, str):
             if "seconds" in duration:
                 duration = int(duration.replace(" seconds", ""))
-            elif ":" in duration:  # Already formatted
+            elif ":" in duration:
                 return duration
             else:
                 duration = int(duration)
@@ -73,61 +71,52 @@ def format_duration(duration):
 
 
 def format_publish_date(date_str):
-    """Format publish date from various formats to relative time format (e.g., '3 months ago')"""
     if not date_str or date_str == "Unknown Date":
         return "Unknown Date"
 
     try:
         date_obj = None
 
-        # Handle YYYYMMDD format from yt-dlp
         if isinstance(date_str, str) and len(date_str) == 8 and date_str.isdigit():
             year = int(date_str[:4])
             month = int(date_str[4:6])
             day = int(date_str[6:8])
             date_obj = datetime(year, month, day)
 
-        # Handle other date formats
         elif isinstance(date_str, str):
-            # If it's already in relative format, return as is
             if any(
                 word in date_str.lower()
                 for word in ["ago", "yesterday", "today", "hour", "minute", "second"]
             ):
                 return date_str
 
-            # Clean the date string
             date_str = date_str.strip()
 
-            # Try various date formats systematically
             date_formats = [
                 "%b %d, %Y",
                 "%B %d, %Y",
                 "%d %b %Y",
-                "%d %B %Y",  # 27 November 2024
-                "%Y-%m-%d",  # 2024-11-27
-                "%m/%d/%Y",  # 11/27/2024
-                "%d/%m/%Y",  # 27/11/2024
-                "%Y-%m-%dT%H:%M:%S",  # ISO format without timezone
-                "%Y-%m-%dT%H:%M:%SZ",  # ISO format with Z
-                "%Y-%m-%dT%H:%M:%S.%f",  # ISO with microseconds
-                "%Y-%m-%dT%H:%M:%S.%fZ",  # ISO with microseconds and Z
+                "%d %B %Y",
+                "%Y-%m-%d",
+                "%m/%d/%Y",
+                "%d/%m/%Y",
+                "%Y-%m-%dT%H:%M:%S",
+                "%Y-%m-%dT%H:%M:%SZ",
+                "%Y-%m-%dT%H:%M:%S.%f",
+                "%Y-%m-%dT%H:%M:%S.%fZ",
             ]
 
-            # Special handling for ISO format with timezone
             if "T" in date_str and ("+" in date_str or date_str.endswith("Z")):
                 try:
-                    # Remove timezone info for parsing
                     if date_str.endswith("Z"):
                         clean_date = date_str[:-1]
                     elif "+" in date_str:
                         clean_date = date_str.split("+")[0]
-                    elif "-" in date_str[-6:]:  # timezone offset like -05:00
+                    elif "-" in date_str[-6:]:
                         clean_date = date_str[:-6]
                     else:
                         clean_date = date_str
 
-                    # Try parsing without timezone
                     if "." in clean_date:
                         date_obj = datetime.strptime(clean_date, "%Y-%m-%dT%H:%M:%S.%f")
                     else:
@@ -135,7 +124,6 @@ def format_publish_date(date_str):
                 except ValueError:
                     pass
 
-            # If ISO parsing didn't work, try other formats
             if not date_obj:
                 for fmt in date_formats:
                     try:
@@ -144,7 +132,6 @@ def format_publish_date(date_str):
                     except ValueError:
                         continue
 
-        # Convert to relative time if we have a date object
         if date_obj:
             return get_relative_time(date_obj)
         else:
@@ -157,22 +144,17 @@ def format_publish_date(date_str):
 
 
 def get_relative_time(date_obj):
-    """Convert datetime object to relative time string with accurate calculations"""
     now = datetime.now()
 
-    # Make date_obj timezone-naive if it's timezone-aware
     if date_obj.tzinfo is not None:
         date_obj = date_obj.replace(tzinfo=None)
 
-    # Calculate the difference
     if date_obj > now:
-        # Future date - shouldn't happen for published videos, but handle gracefully
         return "Recently published"
 
     diff = now - date_obj
     total_seconds = int(diff.total_seconds())
 
-    # More accurate calculations
     if total_seconds < 60:
         return "Just now"
     elif total_seconds < 3600:
@@ -196,13 +178,11 @@ def get_relative_time(date_obj):
 
 
 def format_view_count_full(view_count):
-    """Format view count for display"""
     if not view_count:
         return "Unknown Views"
 
     try:
         if isinstance(view_count, str):
-            # Extract numbers from string
             numbers = re.findall(r"[\d,]+", view_count)
             if numbers:
                 count = int(numbers[0].replace(",", ""))
@@ -253,9 +233,6 @@ def extract_youtube_id(url):
 
 
 def get_video_metadata_by_id(video_id):
-    """Get video metadata with proper formatting for duration and publication date"""
-
-    # First try yt-dlp as it provides the most complete metadata
     try:
         ydl_opts = {
             "quiet": True,
@@ -269,7 +246,28 @@ def get_video_metadata_by_id(video_id):
             )
 
             duration = format_duration(info.get("duration"))
-            published = format_publish_date(info.get("upload_date"))
+            
+            upload_date = info.get("upload_date")
+            if upload_date and isinstance(upload_date, str) and len(upload_date) == 8:
+                try:
+                    year = int(upload_date[:4])
+                    month = int(upload_date[4:6])
+                    day = int(upload_date[6:8])
+                    date_obj = datetime(year, month, day)
+                    published = get_relative_time(date_obj)
+                except (ValueError, TypeError):
+                    published = "Unknown Date"
+            elif info.get("release_date"):
+                published = format_publish_date(info.get("release_date"))
+            elif info.get("timestamp"):
+                try:
+                    date_obj = datetime.fromtimestamp(info.get("timestamp"))
+                    published = get_relative_time(date_obj)
+                except (ValueError, TypeError, OSError):
+                    published = "Unknown Date"
+            else:
+                published = "Unknown Date"
+            
             views = format_view_count_full(info.get("view_count"))
 
             return {
@@ -286,7 +284,6 @@ def get_video_metadata_by_id(video_id):
     except Exception as e:
         print(f"yt-dlp method failed: {e}")
 
-    # Fallback to oEmbed API
     try:
         oembed_url = f"https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v={video_id}&format=json"
         response = requests.get(oembed_url, timeout=10)
@@ -307,7 +304,6 @@ def get_video_metadata_by_id(video_id):
     except Exception as e:
         print(f"oEmbed method failed: {e}")
 
-    # Fallback to search method
     try:
         search = VideosSearch(video_id, limit=10)
         results = search.result().get("result", [])
@@ -318,14 +314,12 @@ def get_video_metadata_by_id(video_id):
                 duration = format_duration(video.get("duration"))
                 published = format_publish_date(video.get("publishedTime"))
 
-                # Handle view count from search results
                 view_count = video.get("viewCount", {})
                 if isinstance(view_count, dict):
                     views = view_count.get("text", "Unknown Views")
                 else:
                     views = format_view_count_full(view_count)
 
-                # Handle channel from search results
                 channel = video.get("channel", {})
                 if isinstance(channel, dict):
                     channel_name = channel.get("name", "Unknown Channel")
@@ -350,7 +344,6 @@ def get_video_metadata_by_id(video_id):
     except Exception as e:
         print(f"Search method failed: {e}")
 
-    # Final fallback with default values
     return {
         "title": f"Video {video_id}",
         "published": "Unknown Date",
@@ -395,6 +388,28 @@ def search_results(request):
         platform = detect_platform(query)
         video_id = extract_youtube_id(query)
 
+        if platform == "unknown":
+            return render(
+                request,
+                "search/search_results.html",
+                {
+                    "error": "Unsupported URL. Please provide a YouTube, YouTube Music, or localhost URL.",
+                    "query": query,
+                    "url_error": True,
+                },
+            )
+
+        if not video_id:
+            return render(
+                request,
+                "search/search_results.html",
+                {
+                    "error": "Invalid video URL. Could not extract video ID from the provided link.",
+                    "query": query,
+                    "url_error": True,
+                },
+            )
+
         context = {
             "raw_url": query,
             "platform": platform,
@@ -403,12 +418,11 @@ def search_results(request):
             in ["youtube", "youtube_music", "localhost"],
         }
 
-        if video_id and context["is_supported_platform"]:
-            try:
-                context["video_metadata"] = get_video_metadata_by_id(video_id)
-            except Exception as e:
-                print(f"Error getting video metadata: {e}")
-                context["metadata_error"] = f"Could not fetch video metadata: {str(e)}"
+        try:
+            context["video_metadata"] = get_video_metadata_by_id(video_id)
+        except Exception as e:
+            print(f"Error getting video metadata: {e}")
+            context["metadata_error"] = f"Could not fetch video metadata: {str(e)}"
 
         return render(request, "search/url_input.html", context)
 
@@ -476,7 +490,6 @@ def search_video(request):
         try:
             videosSearch = VideosSearch(query, limit=limit)
 
-            # Navigate to the requested page
             for _ in range(page - 1):
                 try:
                     videosSearch.next()
@@ -492,14 +505,12 @@ def search_video(request):
                         }
                     )
 
-            # Get current page results
             search_result = videosSearch.result()
             results = search_result.get("result", [])
             processed_results = [
                 process_video_data_url(video) for video in results if video
             ]
 
-            # Simple heuristic: if we got fewer results than limit, probably no more pages
             has_more = len(results) >= limit
 
             return JsonResponse(
@@ -559,10 +570,8 @@ def suggest_videos(request):
 
             if video_results and "result" in video_results:
                 for video in video_results["result"]:
-                    # Get the best thumbnail
                     thumbnail_url = ""
                     if video.get("thumbnails") and len(video["thumbnails"]) > 0:
-                        # Get medium quality thumbnail
                         thumbnails = video["thumbnails"]
                         if len(thumbnails) > 1:
                             thumbnail_url = thumbnails[1].get("url", "")
@@ -591,20 +600,16 @@ def suggest_videos(request):
         except Exception as video_error:
             print(f"Video search error: {video_error}")
 
-        # Get text suggestions
         try:
             text_suggestions = Suggestions(language="en", region="US").get(query)
 
             if text_suggestions and "result" in text_suggestions:
-                # Add text suggestions (limit to 3-4 to not overwhelm)
                 for suggestion in text_suggestions["result"][:4]:
                     suggestions.append({"type": "text", "text": suggestion})
         except Exception as text_error:
             print(f"Text suggestions error: {text_error}")
 
-        # Ensure we have some suggestions
         if not suggestions:
-            # Fallback: add basic text suggestion
             suggestions.append({"type": "text", "text": query})
 
         return JsonResponse(
