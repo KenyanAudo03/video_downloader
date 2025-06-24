@@ -52,76 +52,6 @@
      margin-bottom: 40px;
  }
 
- .searched-video-card {
-     background: rgba(255, 255, 255, 0.05);
-     border-radius: 16px;
-     overflow: hidden;
-     transition: all 0.3s ease;
-     display: block;
-     position: relative;
-     animation: fadeInUp 0.6s ease forwards;
-     cursor: default;
-     backdrop-filter: blur(10px);
-     border: 1px solid rgba(255, 255, 255, 0.1);
-     text-decoration: none;
- }
-
- .searched-video-card:hover {
-     transform: translateY(-8px);
-     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-     background: rgba(255, 255, 255, 0.1);
- }
-
- .searched-video-thumbnail {
-     position: relative;
-     width: 100%;
-     padding-bottom: 56.25%;
-     overflow: hidden;
-     background: #1a1a1a;
-     cursor: pointer;
- }
-
- .searched-thumbnail-img {
-     position: absolute;
-     top: 0;
-     left: 0;
-     width: 100%;
-     height: 100%;
-     object-fit: cover;
-     display: block;
-     transition: all 0.3s ease;
- }
-
- .searched-video-thumbnail:hover .searched-thumbnail-img {
-     transform: scale(1.05);
- }
-
- .searched-video-duration {
-     position: absolute;
-     bottom: 12px;
-     right: 12px;
-     background: rgba(0, 0, 0, 0.9);
-     color: #fff;
-     padding: 4px 8px;
-     border-radius: 6px;
-     font-size: 12px;
-     font-weight: 500;
-     backdrop-filter: blur(5px);
- }
-
- .searched-video-views {
-     position: absolute;
-     bottom: 12px;
-     left: 12px;
-     background: rgba(0, 0, 0, 0.9);
-     color: #fff;
-     padding: 4px 8px;
-     border-radius: 6px;
-     font-size: 11px;
-     font-weight: 500;
-     backdrop-filter: blur(5px);
- }
-
  .searched-play-overlay {
      position: absolute;
      top: 50%;
@@ -154,68 +84,78 @@
      margin-left: 6px;
  }
 
- .searched-video-info {
-     padding: 16px;
-     background: rgba(255, 255, 255, 0.05);
-     position: relative;
- }
-
- .searched-video-title {
-     font-size: 16px;
-     font-weight: 600;
-     margin: 0 0 12px 0;
-     color: #fff;
-     display: -webkit-box;
-     -webkit-line-clamp: 1;
-     -webkit-box-orient: vertical;
-     overflow: hidden;
-     text-overflow: ellipsis;
-     line-height: 1.4;
- }
-
- .searched-video-meta {
-     display: flex;
-     justify-content: space-between;
-     align-items: center;
-     font-size: 13px;
-     color: #aaa;
-     margin-bottom: 12px;
- }
-
- .download-btn {
-     background: #ff6b6b;
-     color: #fff;
-     padding: 8px 16px;
-     border-radius: 8px;
-     text-decoration: none;
-     font-weight: 600;
-     font-size: 12px;
-     border: none;
-     cursor: pointer;
-     transition: all 0.3s ease;
-     display: inline-flex;
-     align-items: center;
-     gap: 6px;
-     width: 100%;
-     justify-content: center;
- }
-
- .download-btn:hover {
-     background: #ff5252;
-     transform: translateY(-2px);
-     box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
- }
-
- .download-icon {
-     width: 14px;
-     height: 14px;
- }
-
  .loading-spinner {
      display: none;
      text-align: center;
      padding: 40px;
      color: #fff;
+ }
+
+ .searched-video-card {
+     cursor: pointer;
+     transition: transform 0.2s ease;
+ }
+
+ .searched-video-thumbnail {
+     position: relative;
+     width: 100%;
+     height: 180px;
+     background: #f3f4f6;
+     border-radius: 12px;
+     overflow: hidden;
+     margin-bottom: 12px;
+ }
+
+ .searched-video-thumbnail img {
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
+     transition: opacity 0.3s ease;
+ }
+
+ .searched-video-duration {
+     position: absolute;
+     bottom: 8px;
+     right: 8px;
+     background: rgba(0, 0, 0, 0.8);
+     color: white;
+     padding: 2px 6px;
+     border-radius: 4px;
+     font-size: 12px;
+     font-weight: 500;
+ }
+
+ .searched-video-info {
+     padding: 0 4px;
+ }
+
+ .searched-video-title {
+     font-size: 16px;
+     font-weight: 600;
+     color: #fff;
+     line-height: 1.4;
+     margin-bottom: 4px;
+     display: -webkit-box;
+     -webkit-line-clamp: 1;
+     -webkit-box-orient: vertical;
+     overflow: hidden;
+ }
+
+ .searched-video-meta {
+     display: flex;
+     flex-direction: column;
+     gap: 6px;
+ }
+
+ .searched-video-stats {
+     font-size: 14px;
+     color: #9ca3af;
+ }
+
+ .searched-channel-name {
+     font-size: 14px;
+     color: #9ca3af;
+     margin-bottom: 2px;
  }
 
  .spinner {
@@ -366,6 +306,20 @@
      flex: 1;
      overflow-y: auto;
      padding-left: 20px;
+ }
+
+ .video-list-section .searched-video-card {
+     background: rgba(255, 255, 255, 0.05);
+     border-radius: 16px;
+     overflow: hidden;
+     transition: all 0.3s ease;
+     display: block;
+     position: relative;
+     animation: fadeInUp 0.6s ease forwards;
+     cursor: default;
+     backdrop-filter: blur(10px);
+     border: 1px solid rgba(255, 255, 255, 0.1);
+     text-decoration: none;
  }
 
  .video-list-section .searched-video-grid {
