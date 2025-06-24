@@ -501,42 +501,50 @@
         ".searched-video-title"
       ).textContent;
       const channelName = videoCard.querySelector(
-        ".searched-video-meta span"
-      ).textContent;
-      const publishedTime = videoCard.querySelector(
-        ".searched-video-meta span:last-child"
-      ).textContent;
+        ".searched-channel-name"
+      ).textContent; // Fixed selector
+      const publishedTime =
+        videoCard.querySelector(".searched-video-stats")?.textContent || ""; // Fixed selector
       const thumbnailImg = videoCard.querySelector(".searched-thumbnail-img");
       const duration = videoCard.querySelector(".searched-video-duration");
 
       sideLoadedVideoIds.add(videoId);
 
       const sideVideoHTML = `
-      <div class="searched-video-card" data-video-id="${videoId}" onclick="switchVideo('${videoId}', '${title.replace(
+    <div class="searched-video-card" data-video-id="${videoId}" onclick="switchVideo('${videoId}', '${title.replace(
         /'/g,
         "\\'"
       )}', '${channelName.replace(/'/g, "\\'")}')">
-        <div class="searched-video-thumbnail">
+      <div class="searched-video-thumbnail">
+        ${
+          thumbnailImg
+            ? `<img class="searched-thumbnail-img" src="${thumbnailImg.src}" alt="${title}" loading="lazy" />`
+            : '<div class="no-thumbnail">No thumbnail</div>'
+        }
+        ${
+          duration
+            ? `<div class="searched-video-duration">${duration.textContent}</div>`
+            : ""
+        }
+        
+        <div class="searched-play-overlay">
+          <div class="searched-play-icon"></div>
+        </div>
+      </div>
+      
+      <div class="searched-video-info">
+        <div class="searched-video-title">${title}</div>
+        <div class="searched-video-meta">
+          <div class="searched-channel-name">${channelName}</div>
           ${
-            thumbnailImg
-              ? `<img class="searched-thumbnail-img" src="${thumbnailImg.src}" alt="${title}" loading="lazy" />`
-              : '<div class="no-thumbnail">No thumbnail</div>'
-          }
-          ${
-            duration
-              ? `<div class="searched-video-duration">${duration.textContent}</div>`
+            publishedTime
+              ? `<div class="searched-video-stats">${publishedTime}</div>`
               : ""
           }
         </div>
-        <div class="searched-video-info">
-          <h3 class="searched-video-title">${title}</h3>
-          <div class="searched-video-meta">
-            <span>${channelName}</span>
-            <span>${publishedTime}</span>
-          </div>
-        </div>
       </div>
-    `;
+    </div>
+  `;
       sideVideoGrid.insertAdjacentHTML("beforeend", sideVideoHTML);
     });
 
@@ -741,13 +749,21 @@
             ? `<div class="searched-video-duration">${duration}</div>`
             : ""
         }
+        
+        <div class="searched-play-overlay">
+          <div class="searched-play-icon"></div>
+        </div>
       </div>
       
       <div class="searched-video-info">
-        <h3 class="searched-video-title">${title}</h3>
+        <div class="searched-video-title">${title}</div>
         <div class="searched-video-meta">
-          <span>${channelName}</span>
-          ${publishedTime ? `<span>${publishedTime}</span>` : ""}
+          <div class="searched-channel-name">${channelName}</div>
+          ${
+            publishedTime
+              ? `<div class="searched-video-stats">${publishedTime}</div>`
+              : ""
+          }
         </div>
       </div>
     </div>
@@ -784,22 +800,6 @@
       channel: channelName,
     });
 
-    // Handle view count from different API response formats
-    let viewCount = "";
-    if (video.views && video.views !== "Unknown Views") {
-      viewCount = video.views;
-    } else if (video.shortViews) {
-      viewCount = video.shortViews;
-    } else if (video.viewCount) {
-      if (typeof video.viewCount === "object" && video.viewCount.simpleText) {
-        viewCount = formatViewCount(
-          parseInt(video.viewCount.simpleText.replace(/[^0-9]/g, ""))
-        );
-      } else if (typeof video.viewCount === "string") {
-        viewCount = video.viewCount;
-      }
-    }
-
     const duration = video.duration || "";
     const publishedTime = video.published || video.publishedTime || "";
 
@@ -826,17 +826,9 @@
             ? `<img class="searched-thumbnail-img" src="${thumbnailUrl}" alt="${title}" loading="lazy" />`
             : '<div class="no-thumbnail">No thumbnail</div>'
         }
-        
         ${
           duration
             ? `<div class="searched-video-duration">${duration}</div>`
-            : ""
-        }
-        ${
-          viewCount
-            ? `<div class="searched-video-views">${viewCount}${
-                viewCount.includes("views") ? "" : " views"
-              }</div>`
             : ""
         }
         
@@ -846,10 +838,14 @@
       </div>
       
       <div class="searched-video-info">
-        <h3 class="searched-video-title">${title}</h3>
+        <div class="searched-video-title">${title}</div>
         <div class="searched-video-meta">
-          <span>${channelName}</span>
-          ${publishedTime ? `<span>${publishedTime}</span>` : ""}
+          <div class="searched-channel-name">${channelName}</div>
+          ${
+            publishedTime
+              ? `<div class="searched-video-stats">${publishedTime}</div>`
+              : ""
+          }
         </div>
       </div>
     </div>
