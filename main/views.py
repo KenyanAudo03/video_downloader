@@ -80,27 +80,27 @@ def parse_duration(duration):
     """Convert YouTube API duration format (PT4M13S) to readable format (4:13)"""
     if not duration:
         return "0:00"
-    
+
     try:
         # Remove PT prefix
         duration = duration[2:]
-        
+
         # Extract hours, minutes, seconds
         hours = 0
         minutes = 0
         seconds = 0
-        
-        if 'H' in duration:
-            hours = int(duration.split('H')[0])
-            duration = duration.split('H')[1]
-        
-        if 'M' in duration:
-            minutes = int(duration.split('M')[0])
-            duration = duration.split('M')[1]
-        
-        if 'S' in duration:
-            seconds = int(duration.split('S')[0])
-        
+
+        if "H" in duration:
+            hours = int(duration.split("H")[0])
+            duration = duration.split("H")[1]
+
+        if "M" in duration:
+            minutes = int(duration.split("M")[0])
+            duration = duration.split("M")[1]
+
+        if "S" in duration:
+            seconds = int(duration.split("S")[0])
+
         # Format as H:MM:SS or M:SS
         if hours > 0:
             return f"{hours}:{minutes:02d}:{seconds:02d}"
@@ -113,16 +113,16 @@ def parse_duration(duration):
 def get_youtube_service():
     """Get YouTube API service using available API keys"""
     api_keys = [
-        getattr(settings, 'YOUTUBE_API_KEY_1', None),
-        getattr(settings, 'YOUTUBE_API_KEY_2', None),
+        getattr(settings, "YOUTUBE_API_KEY_1", None),
+        getattr(settings, "YOUTUBE_API_KEY_2", None),
     ]
-    
+
     for api_key in api_keys:
         if api_key:
             try:
-                youtube = build('youtube', 'v3', developerKey=api_key)
+                youtube = build("youtube", "v3", developerKey=api_key)
                 # Test the API key with a simple request
-                youtube.videos().list(part='id', id='dQw4w9WgXcQ').execute()
+                youtube.videos().list(part="id", id="dQw4w9WgXcQ").execute()
                 return youtube
             except HttpError as e:
                 if e.resp.status == 403:  # Quota exceeded
@@ -134,7 +134,7 @@ def get_youtube_service():
             except Exception as e:
                 logger.error(f"Error with YouTube API key: {e}")
                 continue
-    
+
     logger.error("All YouTube API keys failed or unavailable")
     return None
 
@@ -148,78 +148,97 @@ def fetch_videos_from_youtube_api(category_id, max_results=50):
     try:
         # First, try to get most popular videos by category
         try:
-            videos_response = youtube.videos().list(
-                part='snippet,contentDetails,statistics',
-                chart='mostPopular',
-                videoCategoryId=category_id,
-                regionCode='US',
-                maxResults=min(max_results, 50)
-            ).execute()
-            
+            videos_response = (
+                youtube.videos()
+                .list(
+                    part="snippet,contentDetails,statistics",
+                    chart="mostPopular",
+                    videoCategoryId=category_id,
+                    regionCode="US",
+                    maxResults=min(max_results, 50),
+                )
+                .execute()
+            )
+
             processed_videos = []
-            for item in videos_response['items']:
+            for item in videos_response["items"]:
                 try:
                     video_data = {
-                        'video_id': item['id'],
-                        'title': item['snippet']['title'],
-                        'category': category_id,
-                        'duration': parse_duration(item['contentDetails']['duration']),
-                        'channel_name': item['snippet']['channelTitle'],
-                        'published_at': item['snippet']['publishedAt'],
+                        "video_id": item["id"],
+                        "title": item["snippet"]["title"],
+                        "category": category_id,
+                        "duration": parse_duration(item["contentDetails"]["duration"]),
+                        "channel_name": item["snippet"]["channelTitle"],
+                        "published_at": item["snippet"]["publishedAt"],
                     }
                     processed_videos.append(video_data)
                 except Exception as e:
-                    logger.warning(f"Error processing video {item.get('id', 'unknown')}: {e}")
+                    logger.warning(
+                        f"Error processing video {item.get('id', 'unknown')}: {e}"
+                    )
                     continue
-            
+
             if processed_videos:
                 return processed_videos
-                
+
         except Exception as e:
             logger.warning(f"Chart method failed, trying search: {e}")
 
         # Fallback: Search for videos with category-specific keywords
         search_queries = get_category_search_terms(category_id)
         all_videos = []
-        
+
         for query in search_queries:
             try:
-                search_response = youtube.search().list(
-                    part='id,snippet',
-                    type='video',
-                    q=query,
-                    regionCode='US',
-                    maxResults=min(20, max_results // len(search_queries) + 5),
-                    order='relevance',
-                    publishedAfter=(datetime.now() - timedelta(days=90)).isoformat() + 'Z'
-                ).execute()
+                search_response = (
+                    youtube.search()
+                    .list(
+                        part="id,snippet",
+                        type="video",
+                        q=query,
+                        regionCode="US",
+                        maxResults=min(20, max_results // len(search_queries) + 5),
+                        order="relevance",
+                        publishedAfter=(datetime.now() - timedelta(days=90)).isoformat()
+                        + "Z",
+                    )
+                    .execute()
+                )
 
-                video_ids = [item['id']['videoId'] for item in search_response['items']]
-                
+                video_ids = [item["id"]["videoId"] for item in search_response["items"]]
+
                 if video_ids:
-                    videos_response = youtube.videos().list(
-                        part='snippet,contentDetails,statistics',
-                        id=','.join(video_ids)
-                    ).execute()
+                    videos_response = (
+                        youtube.videos()
+                        .list(
+                            part="snippet,contentDetails,statistics",
+                            id=",".join(video_ids),
+                        )
+                        .execute()
+                    )
 
-                    for item in videos_response['items']:
+                    for item in videos_response["items"]:
                         try:
                             video_data = {
-                                'video_id': item['id'],
-                                'title': item['snippet']['title'],
-                                'category': category_id,
-                                'duration': parse_duration(item['contentDetails']['duration']),
-                                'channel_name': item['snippet']['channelTitle'],
-                                'published_at': item['snippet']['publishedAt'],
+                                "video_id": item["id"],
+                                "title": item["snippet"]["title"],
+                                "category": category_id,
+                                "duration": parse_duration(
+                                    item["contentDetails"]["duration"]
+                                ),
+                                "channel_name": item["snippet"]["channelTitle"],
+                                "published_at": item["snippet"]["publishedAt"],
                             }
                             all_videos.append(video_data)
                         except Exception as e:
-                            logger.warning(f"Error processing video {item.get('id', 'unknown')}: {e}")
+                            logger.warning(
+                                f"Error processing video {item.get('id', 'unknown')}: {e}"
+                            )
                             continue
-                            
+
                 if len(all_videos) >= max_results:
                     break
-                    
+
             except Exception as e:
                 logger.warning(f"Search query '{query}' failed: {e}")
                 continue
@@ -239,51 +258,68 @@ def get_category_search_terms(category_id):
     category_searches = {
         "10": ["music", "song", "artist", "album", "concert"],  # Music
         "20": ["gaming", "gameplay", "game review", "esports", "gaming news"],  # Gaming
-        "24": ["entertainment", "celebrity", "talk show", "comedy show"],  # Entertainment
+        "24": [
+            "entertainment",
+            "celebrity",
+            "talk show",
+            "comedy show",
+        ],  # Entertainment
         "25": ["news", "breaking news", "current events", "politics"],  # News
-        "27": ["education", "tutorial", "learning", "how to", "educational"],  # Education
-        "28": ["science", "technology", "tech review", "innovation", "research"],  # Science & Tech
+        "27": [
+            "education",
+            "tutorial",
+            "learning",
+            "how to",
+            "educational",
+        ],  # Education
+        "28": [
+            "science",
+            "technology",
+            "tech review",
+            "innovation",
+            "research",
+        ],  # Science & Tech
         "17": ["sports", "football", "basketball", "soccer", "athletics"],  # Sports
         "23": ["comedy", "funny", "humor", "stand up", "comedy sketch"],  # Comedy
         "1": ["film", "movie", "cinema", "trailer", "animation"],  # Film & Animation
     }
-    
+
     return category_searches.get(category_id, ["popular", "trending", "viral"])
 
 
 def save_videos_to_cache(videos_data):
     """Save fetched videos to database cache"""
     saved_count = 0
-    
+
     for video_data in videos_data:
         try:
             cached_video, created = CachedVideo.objects.get_or_create(
-                video_id=video_data['video_id'],
+                video_id=video_data["video_id"],
                 defaults={
-                    'title': video_data['title'],
-                    'category': video_data['category'],
-                    'duration': video_data['duration'],
-                    'channel_name': video_data['channel_name'],
-                    'published_at': video_data['published_at'],
-                }
+                    "title": video_data["title"],
+                    "category": video_data["category"],
+                    "duration": video_data["duration"],
+                    "channel_name": video_data["channel_name"],
+                    "published_at": video_data["published_at"],
+                },
             )
-            
+
             if created:
                 saved_count += 1
                 logger.info(f"Cached new video: {video_data['title']}")
             else:
                 # Update existing video data
-                cached_video.title = video_data['title']
-                cached_video.category = video_data['category']
-                cached_video.duration = video_data['duration']
-                cached_video.channel_name = video_data['channel_name']
-                cached_video.published_at = video_data['published_at']
+                cached_video.title = video_data["title"]
+                cached_video.category = video_data["category"]
+                cached_video.duration = video_data["duration"]
+                cached_video.channel_name = video_data["channel_name"]
+                cached_video.published_at = video_data["published_at"]
                 cached_video.save()
-                
+
         except Exception as e:
             logger.error(f"Error saving video {video_data['video_id']}: {e}")
             continue
-    
+
     logger.info(f"Saved {saved_count} new videos to cache")
     return saved_count
 
@@ -292,19 +328,23 @@ def ensure_category_has_videos(category_id, min_videos=20):
     """Ensure a category has minimum number of videos, fetch if needed"""
     if not category_id:
         return
-    
+
     # Check current count
     current_count = CachedVideo.objects.filter(category=category_id).count()
-    
+
     if current_count < min_videos:
-        logger.info(f"Category {category_id} has only {current_count} videos, fetching more...")
-        
+        logger.info(
+            f"Category {category_id} has only {current_count} videos, fetching more..."
+        )
+
         # Fetch videos from YouTube API
         new_videos = fetch_videos_from_youtube_api(category_id, max_results=50)
-        
+
         if new_videos:
             saved_count = save_videos_to_cache(new_videos)
-            logger.info(f"Fetched and saved {saved_count} new videos for category {category_id}")
+            logger.info(
+                f"Fetched and saved {saved_count} new videos for category {category_id}"
+            )
         else:
             logger.warning(f"No new videos fetched for category {category_id}")
 
@@ -337,11 +377,11 @@ def load_videos(request):
 
     try:
         category_id = CATEGORY_MAP.get(category)
-        
+
         # Ensure category has enough videos before fetching
         if category_id:
             ensure_category_has_videos(category_id, min_videos=20)
-        
+
         if category == "all":
             videos = fetch_all_videos_from_db(max_results, shown_video_ids, page)
         else:
@@ -530,9 +570,21 @@ def populate_all_categories():
         "comedy": "23",
         "film": "1",
     }
-    
+
     for category_name, category_id in CATEGORY_MAP.items():
         logger.info(f"Populating category: {category_name}")
         ensure_category_has_videos(category_id, min_videos=50)
-        
+
     logger.info("Finished populating all categories")
+
+
+def privacy_policy(request):
+    return render(request, "main/privacy_policy.html")
+
+
+def terms_of_service(request):
+    return render(request, "main/terms_of_service.html")
+
+
+def contact(request):
+    return render(request, "main/contact.html")
