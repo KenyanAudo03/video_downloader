@@ -3,6 +3,7 @@ from django.utils.html import format_html
 from .models import Feedback
 from django.utils.timezone import localtime
 
+
 @admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
     list_display = [
@@ -103,13 +104,10 @@ class FeedbackAdmin(admin.ModelAdmin):
             "Feedback Overview",
             {
                 "fields": (
-                    "id",
-                    "description",
                     "formatted_created_at",
                     "page_url",
                     "screenshot_preview",
-                    "user_agent",
-                    "ip_address",
+                    "description",
                 )
             },
         ),
