@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "search",
     "share",
     "feedback",
+    "contact",
 ]
 
 MIDDLEWARE = [
@@ -111,7 +112,8 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE = "Africa/Nairobi"
+
 
 USE_I18N = True
 
@@ -133,7 +135,7 @@ MEDIA_URL = "/media/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-SHARE_YOUTUBE_API_KEY = config('YOUTUBE_API_KEY1')
+SHARE_YOUTUBE_API_KEY = config("YOUTUBE_API_KEY1")
 
-YOUTUBE_API_KEY_1  = config('YOUTUBE_API_KEY2')
-YOUTUBE_API_KEY_2 = config('YOUTUBE_API_KEY3')
+YOUTUBE_API_KEY_1 = config("YOUTUBE_API_KEY2")
+YOUTUBE_API_KEY_2 = config("YOUTUBE_API_KEY3")
