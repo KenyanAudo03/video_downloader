@@ -1,0 +1,238 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Arial", sans-serif;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.top-section {
+    background: white;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 10px 20px 0 20px;
+}
+
+.contact-hero {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.contact-hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 15px;
+    letter-spacing: -1px;
+}
+
+.contact-hero p {
+    font-size: 1.1rem;
+    color: #666;
+    max-width: 500px;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 500px;
+    margin-bottom: 60px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    flex: 1;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px 15px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #f5f5f5;
+    color: #333;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    background: #ebebeb;
+    box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.2);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #999;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+    margin-bottom: 25px;
+    resize: none;
+    overflow: hidden;
+}
+
+.submit-btn {
+    width: 100%;
+    background: #ff0000;
+    color: white;
+    border: none;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.submit-btn:hover {
+    background: #cc0000;
+    transform: translateY(-1px);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.alert {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    background-color: #000;
+    color: #fff;
+    margin-top: 0;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.95rem;
+    z-index: 9999;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.alert-success,
+.alert-error {
+    background-color: #000 !important;
+    color: #fff !important;
+    border: 1px solid #333 !important;
+}
+
+.social-section {
+    background: white;
+    padding: 10px 20px 10px 20px;
+    text-align: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.social-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 20px;
+    margin-top: 10px;
+}
+
+.social-links {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.social-link {
+    width: 60px;
+    height: 60px;
+    background: #f5f5f5;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: #666;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.social-link:hover {
+    background: #ff0000;
+    color: white;
+}
+
+@media (max-width: 768px) {
+    body {
+        overflow-y: auto;
+        height: auto;
+    }
+
+    .contact-hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .info-cards {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .section-title {
+        font-size: 2rem;
+    }
+
+    .contact-info-section {
+        padding: 60px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .contact-hero h1 {
+        font-size: 2rem;
+    }
+
+    .contact-hero p {
+        font-size: 1rem;
+    }
+
+    .info-cards {
+        gap: 25px;
+    }
+
+    .info-card {
+        padding: 30px 20px;
+    }
+
+    .section-title {
+        font-size: 1.8rem;
+    }
+}
