@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import re
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from contact.forms import ContactForm
 
 logger = logging.getLogger(__name__)
 
@@ -587,4 +588,5 @@ def terms_of_service(request):
 
 
 def contact(request):
-    return render(request, "main/contact.html")
+    form = ContactForm()
+    return render(request, "main/contact.html", {'form': form})
