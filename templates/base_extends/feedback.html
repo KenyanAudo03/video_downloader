@@ -355,12 +355,6 @@
     }, delay);
   }
 
-  document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") {
-      closeFeedbackPanel();
-    }
-  });
-
   document
     .getElementById("feedbackText")
     .addEventListener("input", updateSendButtonState);

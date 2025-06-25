@@ -636,21 +636,4 @@
       });
     }
   });
-
-  document.addEventListener("keydown", function (e) {
-    const helpPanel = document.getElementById("helpPanel");
-
-    if (helpPanel && helpPanel.classList.contains("active")) {
-      if (e.key === "Escape") {
-        closeHelpPanel();
-      } else if (
-        e.key === "Backspace" &&
-        currentView !== "main" &&
-        e.target.tagName !== "INPUT"
-      ) {
-        e.preventDefault();
-        goBackToMain();
-      }
-    }
-  });
 </script>
