@@ -517,7 +517,7 @@
      }
 
      .legal-links a {
-         color: #6b7280;
+         color: #f3f4f6;
          text-decoration: none;
          font-weight: 500;
      }
@@ -529,6 +529,6 @@
      .separator {
          font-size: 0.9rem;
          pointer-events: none;
-         color: #f3f4f6;
+         color: #6b7280;
          user-select: none;
      }
