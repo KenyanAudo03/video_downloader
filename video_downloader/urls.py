@@ -27,6 +27,7 @@ urlpatterns = [
     path("search/", include("search.urls")),
     path("share/", include("share.urls")),
     path("feedback/", include("feedback.urls")),
+    path("contact/", include("contact.urls")),
 ]
 
 if settings.DEBUG:
