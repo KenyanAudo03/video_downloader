@@ -6,11 +6,10 @@ from .models import Feedback
 @admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
     list_display = [
-        "id",
+        "short_id",
         "short_description_display",
+        "formatted_created_at",
         "colored_screenshot_status",
-        "page_url",
-        "created_at",
         "colored_resolution_status",
     ]
     list_filter = ["is_resolved", "created_at"]
@@ -19,55 +18,37 @@ class FeedbackAdmin(admin.ModelAdmin):
 
     readonly_fields = [
         "id",
-        "created_at",
-        "user_agent",
-        "page_url",
-        "ip_address",
         "description",
+        "formatted_created_at",
+        "page_url",
         "screenshot",
         "screenshot_preview",
+        "user_agent",
+        "ip_address",
         "short_description_display",
         "colored_screenshot_status",
         "colored_resolution_status",
     ]
 
-    fieldsets = (
-        (
-            "📝 Feedback Details",
-            {
-                "fields": (
-                    "id",
-                    "short_description_display",
-                    "description",
-                    "created_at",
-                    "page_url",
-                )
-            },
-        ),
-        (
-            "🖼 Screenshot (if available)",
-            {
-                "fields": ("screenshot", "screenshot_preview"),
-                "classes": ("collapse",),
-            },
-        ),
-        (
-            "⚙️ Technical Info",
-            {
-                "fields": ("user_agent", "ip_address"),
-                "classes": ("collapse",),
-            },
-        ),
-    )
+    def short_id(self, obj):
+        return str(obj.id)[:5]
+
+    short_id.short_description = "ID"
 
     def short_description_display(self, obj):
-        return format_html(
-            '<div title="{desc}">{short}</div>',
-            desc=obj.description,
-            short=obj.short_description,
+        short = (
+            obj.description[:10] + "..."
+            if len(obj.description) > 10
+            else obj.description
         )
+        return format_html('<div title="{}">{}</div>', obj.description, short)
 
-    short_description_display.short_description = "Short Description"
+    short_description_display.short_description = "Description"
+
+    def formatted_created_at(self, obj):
+        return obj.created_at.strftime("%B %d, %Y %H:%M")
+
+    formatted_created_at.short_description = "Created At"
 
     def colored_screenshot_status(self, obj):
         if obj.screenshot:
@@ -105,5 +86,33 @@ class FeedbackAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return True
+
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        if object_id:
+            try:
+                feedback = Feedback.objects.get(pk=object_id)
+                if not feedback.is_resolved:
+                    feedback.is_resolved = True
+                    feedback.save()
+            except Feedback.DoesNotExist:
+                pass
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    fieldsets = (
+        (
+            "Feedback Overview",
+            {
+                "fields": (
+                    "id",
+                    "description",
+                    "formatted_created_at",
+                    "page_url",
+                    "screenshot_preview",
+                    "user_agent",
+                    "ip_address",
+                )
+            },
+        ),
+    )
 
     actions = []
