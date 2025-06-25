@@ -1,0 +1,657 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/help.css'%}">
+<div class="help-overlay" id="helpOverlay"></div>
+<div class="help-panel" id="helpPanel">
+  <div class="help-header">
+    <h2 class="help-title">
+      <button class="back-btn" id="backBtn" onclick="goBackToMain()">
+        <i class="bx bx-arrow-back"></i>
+      </button>
+      <span id="helpTitleText">Help & Support</span>
+    </h2>
+    <button class="close-btn" onclick="closeHelpPanel()">
+      <i class="bx bx-x"></i>
+    </button>
+  </div>
+
+  <div class="help-search">
+    <div class="search-box">
+      <i class="bx bx-search search-icon"></i>
+      <input
+        type="text"
+        class="help-search-input"
+        placeholder="Search for help"
+        id="helpSearchInput"
+      />
+    </div>
+  </div>
+
+  <div class="help-content">
+    <div class="help-main-view" id="mainView">
+      <div class="help-section">
+        <h3 class="section-title">Getting Started</h3>
+        <div class="help-item" onclick="showHelpDetails('search-for-videos')">
+          <div class="help-item-title">Search for videos</div>
+          <div class="help-item-desc">
+            Find videos from across the web using our search feature
+          </div>
+        </div>
+        <div class="help-item" onclick="showHelpDetails('create-account')">
+          <div class="help-item-title">Create account & view history</div>
+          <div class="help-item-desc">
+            Sign up to access your viewing history and saved content
+          </div>
+        </div>
+        <div class="help-item" onclick="showHelpDetails('create-playlists')">
+          <div class="help-item-title">Create playlists</div>
+          <div class="help-item-desc">
+            Organize your favorite videos into custom playlists (account
+            required)
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h3 class="section-title">Media Grabber & Downloads</h3>
+        <div class="help-item" onclick="showHelpDetails('download-tiktok')">
+          <div class="help-item-title">Download TikTok videos</div>
+          <div class="help-item-desc">
+            Use Media Grabber Link to download TikTok videos
+          </div>
+        </div>
+        <div class="help-item" onclick="showHelpDetails('download-instagram')">
+          <div class="help-item-title">Download Instagram videos</div>
+          <div class="help-item-desc">
+            Save Instagram videos and stories to your device
+          </div>
+        </div>
+        <div class="help-item" onclick="showHelpDetails('download-facebook')">
+          <div class="help-item-title">Download Facebook videos</div>
+          <div class="help-item-desc">
+            Download Facebook videos using the Media Grabber
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h3 class="section-title">Watching & Sharing</h3>
+        <div class="help-item" onclick="showHelpDetails('playback-settings')">
+          <div class="help-item-title">Playback settings</div>
+          <div class="help-item-desc">
+            Adjust video quality, speed, and subtitles
+          </div>
+        </div>
+        <div class="help-item" onclick="showHelpDetails('sharing-links')">
+          <div class="help-item-title">Sharing video links</div>
+          <div class="help-item-desc">
+            Share video links with friends and on social media
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h3 class="section-title">Keyboard Shortcuts</h3>
+        <div class="help-shortcuts">
+          <div class="shortcut-item">
+            <span>Play/Pause</span>
+            <span class="shortcut-key">Space</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Seek forward 10s</span>
+            <span class="shortcut-key">L</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Seek backward 10s</span>
+            <span class="shortcut-key">J</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Mute/Unmute</span>
+            <span class="shortcut-key">M</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Fullscreen</span>
+            <span class="shortcut-key">F</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Next video</span>
+            <span class="shortcut-key">N</span>
+          </div>
+          <div class="shortcut-item">
+            <span>Previous video</span>
+            <span class="shortcut-key">P</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h3 class="section-title">Account & Settings</h3>
+        <div
+          class="help-item"
+          onclick="showHelpDetails('data-personalization')"
+        >
+          <div class="help-item-title">Data & personalization</div>
+          <div class="help-item-desc">
+            Manage your data and personalized recommendations
+          </div>
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h3 class="section-title">Need More Help?</h3>
+        <div class="contact-section">
+          <a href="#" class="contact-btn">
+            <i class="bx bx-message-detail"></i>
+            Send Feedback
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="search-results" id="searchResults">
+      <h2>Search Results</h2>
+      <div id="searchResultsList"></div>
+    </div>
+
+    <div class="help-detail-view" id="detailView">
+      <div id="detailContent"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const helpDetails = {
+    "search-for-videos": {
+      title: "Search for videos",
+      content: `
+     <div class="detail-content">
+       <p>Our powerful search feature helps you find videos from across the web quickly and efficiently.</p>
+       
+       <h3>How to search:</h3>
+       <ul>
+         <li>Click on the search bar at the top of the page</li>
+         <li>Type your search terms (keywords, video titles, channel names)</li>
+         <li>Press Enter or click the search button</li>
+         <li>Browse through the results and click on any video to watch</li>
+       </ul>
+
+       <h3>Search tips:</h3>
+       <ul>
+         <li>Use specific keywords for better results</li>
+         <li>Try different combinations of words</li>
+         <li>Use quotes for exact phrases: "funny cat videos"</li>
+         <li>Click suggested videos to explore related content more easily</li>
+       </ul>
+
+       <div class="tip-box">
+         <strong>Pro tip:</strong> You can also search by pasting video URLs directly into the search bar to find specific videos or related content.
+       </div>
+
+       <h3>Advanced search operators:</h3>
+       <ul>
+         <li><strong>AND:</strong> Include multiple terms (cats AND dogs)</li>
+         <li><strong>OR:</strong> Include either term (cats OR dogs)</li>
+         <li><strong>Quotes:</strong> Exact phrase search ("cute puppies")</li>
+         <li><strong>Wildcard:</strong> Use * for unknown words (how to * a website)</li>
+       </ul>
+     </div>
+   `,
+    },
+    "create-account": {
+      title: "Create account & view history",
+      content: `
+     <div class="detail-content">
+       <p>Creating an account unlocks additional features and helps you keep track of your viewing activity.</p>
+       
+       <h3>Benefits of creating an account:</h3>
+       <ul>
+         <li>View your complete watching history</li>
+         <li>Create and manage custom playlists</li>
+         <li>Save videos to watch later</li>
+         <li>Get personalized recommendations</li>
+         <li>Sync your data across devices</li>
+       </ul>
+
+       <h3>How to create an account:</h3>
+       <ul>
+         <li>Click the "User Icon" button in the top right corner</li>
+         <li>Enter your email address and create a password</li>
+         <li>Verify your email address</li>
+         <li>Complete your profile setup</li>
+       </ul>
+
+       <div class="tip-box">
+         <strong>Privacy note:</strong> We respect your privacy. Your viewing history is only visible to you and is never shared with third parties.
+       </div>
+
+       <h3>Viewing your history:</h3>
+       <p>Once logged in, you can access your history by:</p>
+       <ul>
+         <li>Clicking "History" on the sidebar</li>
+         <li>Browse by date or search within your history</li>
+         <li>Clear specific items or your entire history</li>
+       </ul>
+     </div>
+   `,
+    },
+    "create-playlists": {
+      title: "Create playlists",
+      content: `
+     <div class="detail-content">
+       <p>Organize your favorite videos into custom playlists for easy access and sharing.</p>
+       
+       <h3>Creating a new playlist:</h3>
+       <ul>
+         <li>Click the "Create Playlist" button in your account menu</li>
+         <li>Give your playlist a name and description</li>
+         <li>Choose privacy settings (Public, Unlisted, or Private)</li>
+       </ul>
+
+       <h3>Adding videos to playlists:</h3>
+       <ul>
+         <li>Click the "Add to Playlist" button below any video</li>
+         <li>Select an existing playlist or create a new one</li>
+         <li>Videos are automatically saved to your selected playlist</li>
+       </ul>
+
+       <div class="tip-box">
+         <strong>Quick tip:</strong> You can add videos to multiple playlists and reorder them by dragging and dropping.
+       </div>
+
+       <h3>Managing your playlists:</h3>
+       <ul>
+         <li>Access all playlists from your profile menu or sidebar links</li>
+         <li>Edit playlist details, reorder videos, or remove content</li>
+         <li>Share public playlists with friends via direct links</li>
+       </ul>
+     </div>
+   `,
+    },
+    "download-tiktok": {
+      title: "Download TikTok videos",
+      content: `
+     <div class="detail-content">
+       <p>Save TikTok videos directly to your device using our Media Grabber feature.</p>
+       
+       <h3>How to download TikTok videos:</h3>
+       <ul>
+         <li>Copy the TikTok video URL from the TikTok app or website</li>
+         <li>Click on "Media Grabber" in the main menu</li>
+         <li>Paste the URL into the input field</li>
+         <li>Click "Analyze" to process the video</li>
+         <li>Choose your preferred quality and format</li>
+         <li>Click "Download" to save to your device</li>
+       </ul>
+
+       <h3>Supported formats:</h3>
+       <ul>
+         <li>MP4 (recommended for most devices)</li>
+         <li>WebM (smaller file size)</li>
+         <li>Audio only (MP3 format)</li>
+         <li>GIF (for short clips)</li>
+       </ul>
+
+       <div class="tip-box">
+         <strong>Important:</strong> Please respect creators' rights and only download content for personal use or with proper permission.
+       </div>
+     </div>
+   `,
+    },
+    "download-instagram": {
+      title: "Download Instagram videos",
+      content: `
+     <div class="detail-content">
+       <p>Download Instagram videos, stories, and IGTV content with ease.</p>
+       
+       <h3>Downloading Instagram videos:</h3>
+       <ul>
+         <li>Copy the Instagram post URL</li>
+         <li>Open Media Grabber from the main menu</li>
+         <li>Paste the URL and click "Analyze"</li>
+         <li>Select download quality and format</li>
+         <li>Click "Download" to save the video</li>
+       </ul>
+
+       <h3>Supported Instagram content:</h3>
+       <ul>
+         <li>Regular video posts</li>
+         <li>Instagram Stories (if public)</li>
+         <li>IGTV videos</li>
+         <li>Instagram Reels</li>
+         <li>Carousel posts with videos</li>
+       </ul>
+
+       <div class="tip-box">
+         <strong>Note:</strong> Private account content cannot be downloaded unless you have access to view it.
+       </div>
+     </div>
+   `,
+    },
+    "download-facebook": {
+      title: "Download Facebook videos",
+      content: `
+     <div class="detail-content">
+       <p>Save Facebook videos to your device using our Media Grabber tool.</p>
+       
+       <h3>How to download Facebook videos:</h3>
+       <ul>
+         <li>Navigate to the Facebook video you want to download</li>
+         <li>Right-click on the video and select "Copy video URL"</li>
+         <li>Open Media Grabber from the main menu</li>
+         <li>Paste the URL into the input field</li>
+         <li>Click "Analyze" to process the video</li>
+         <li>Select your preferred quality and format</li>
+         <li>Click "Download" to save the video</li>
+       </ul>
+
+       <h3>Supported Facebook content:</h3>
+       <ul>
+         <li>Public Facebook videos</li>
+         <li>Facebook Watch videos</li>
+         <li>Live stream recordings</li>
+         <li>Videos from Facebook pages</li>
+         <li>Shared videos (if public)</li>
+       </ul>
+
+       <div class="tip-box">
+         <strong>Privacy note:</strong> Only public videos and videos you have access to can be downloaded.
+       </div>
+     </div>
+   `,
+    },
+    "playback-settings": {
+      title: "Playback settings",
+      content: `
+     <div class="detail-content">
+       <p>Customize your video watching experience with various playback options.</p>
+       
+       <h3>Playback speed control:</h3>
+       <ul>
+         <li>0.25x: Quarter speed for detailed viewing</li>
+         <li>0.5x: Half speed for learning content</li>
+         <li>0.75x: Slightly slower for clarity</li>
+         <li>1x: Normal playback speed</li>
+         <li>1.25x: Slightly faster</li>
+         <li>1.5x: Faster viewing</li>
+         <li>2x: Double speed</li>
+       </ul>
+
+       <div class="tip-box">
+         <strong>Note:</strong> Click the setting icon on the video to adjust playback speed.
+       </div>
+
+       <h3>Audio settings:</h3>
+       <ul>
+         <li>Volume control with fine adjustment</li>
+         <li>Mute/unmute toggle</li>
+       </ul>
+
+       <h3>Subtitle options:</h3>
+       <ul>
+         <li>Auto-generated subtitles (when available)</li>
+         <li>Multiple language options</li>
+       </ul>
+     </div>
+   `,
+    },
+    "sharing-links": {
+      title: "Sharing video links",
+      content: `
+     <div class="detail-content">
+  <p>Share your favorite videos with friends by copying the video link.</p>
+  
+  <h3>How to share videos:</h3>
+  <ul>
+    <li>Click the "Share" button below any video</li>
+    <li>The video link will be copied to your clipboard</li>
+    <li>Paste the link wherever you'd like to share it (e.g., in a message or post)</li>
+  </ul>
+
+  <div class="tip-box">
+    <strong>Note:</strong> Make sure the recipient has access to view the video based on its privacy settings.
+  </div>
+
+  <h3>Privacy settings:</h3>
+  <ul>
+    <li><strong>Public:</strong> Anyone with the link can view</li>
+    <li><strong>Unlisted:</strong> Only people with the link can view</li>
+    <li><strong>Private:</strong> Only you can view the shared content</li>
+  </ul>
+</div>
+
+   `,
+    },
+    "data-personalization": {
+      title: "Data & personalization",
+      content: `
+     <div class="detail-content">
+       <p>Control how your data is used to personalize your video experience.</p>
+       
+       <h3>Personalization features:</h3>
+       <ul>
+         <li>Recommended videos based on viewing history</li>
+         <li>Customized search suggestions</li>
+         <li>Personalized trending content</li>
+         <li>Related video recommendations</li>
+       </ul>
+
+       <h3>Data we collect:</h3>
+       <ul>
+         <li>Videos you watch and search for</li>
+         <li>Time spent watching videos</li>
+         <li>Devices and browsers you use</li>
+         <li>General location (country/region)</li>
+       </ul>
+
+       <div class="tip-box">
+         <strong>Privacy control:</strong> You can disable personalization or delete your data at any time in your account settings.
+       </div>
+
+       <h3>Managing your data:</h3>
+       <ul>
+         <li>View all collected data in your account dashboard</li>
+         <li>Download a copy of your data</li>
+         <li>Delete specific items from your history</li>
+         <li>Turn off data collection entirely</li>
+       </ul>
+
+       <h3>Privacy settings:</h3>
+       <ul>
+         <li><strong>Full personalization:</strong> Use all data for recommendations</li>
+         <li><strong>Limited personalization:</strong> Use only search and viewing data</li>
+         <li><strong>No personalization:</strong> Don't use personal data for recommendations</li>
+       </ul>
+     </div>
+   `,
+    },
+  };
+
+  let currentView = "main";
+  let searchTimeout;
+
+  function openHelpPanel() {
+    const overlay = document.getElementById("helpOverlay");
+    const panel = document.getElementById("helpPanel");
+
+    overlay.classList.add("active");
+    panel.classList.add("active");
+
+    document.body.style.overflow = "hidden";
+
+    resetScrollPosition();
+  }
+
+  function closeHelpPanel() {
+    const overlay = document.getElementById("helpOverlay");
+    const panel = document.getElementById("helpPanel");
+
+    overlay.classList.remove("active");
+    panel.classList.remove("active");
+
+    document.body.style.overflow = "";
+
+    goBackToMain();
+    resetScrollPosition();
+  }
+
+  function resetScrollPosition() {
+    const panel = document.getElementById("helpPanel");
+    if (panel) {
+      panel.scrollTop = 0;
+    }
+  }
+
+  function showHelpDetails(detailId) {
+    const mainView = document.getElementById("mainView");
+    const detailView = document.getElementById("detailView");
+    const searchResults = document.getElementById("searchResults");
+    const detailContent = document.getElementById("detailContent");
+    const backBtn = document.getElementById("backBtn");
+    const titleText = document.getElementById("helpTitleText");
+
+    if (helpDetails[detailId]) {
+      mainView.classList.add("hidden");
+      searchResults.classList.remove("active");
+      detailView.classList.add("active");
+      backBtn.classList.add("visible");
+
+      titleText.textContent = helpDetails[detailId].title;
+      detailContent.innerHTML = helpDetails[detailId].content;
+
+      currentView = "detail";
+
+      resetScrollPosition();
+    }
+  }
+
+  function goBackToMain() {
+    const mainView = document.getElementById("mainView");
+    const detailView = document.getElementById("detailView");
+    const searchResults = document.getElementById("searchResults");
+    const backBtn = document.getElementById("backBtn");
+    const titleText = document.getElementById("helpTitleText");
+    const searchInput = document.getElementById("helpSearchInput");
+
+    mainView.classList.remove("hidden");
+    detailView.classList.remove("active");
+    searchResults.classList.remove("active");
+    backBtn.classList.remove("visible");
+
+    titleText.textContent = "Help & Support";
+    searchInput.value = "";
+
+    currentView = "main";
+
+    resetScrollPosition();
+  }
+
+  function performSearch(query) {
+    const searchResults = document.getElementById("searchResults");
+    const searchResultsList = document.getElementById("searchResultsList");
+    const mainView = document.getElementById("mainView");
+    const detailView = document.getElementById("detailView");
+
+    if (!query.trim()) {
+      goBackToMain();
+      return;
+    }
+
+    const results = [];
+    const searchTerm = query.toLowerCase();
+
+    Object.keys(helpDetails).forEach((key) => {
+      const item = helpDetails[key];
+      const title = item.title.toLowerCase();
+      const content = item.content.toLowerCase();
+
+      if (title.includes(searchTerm) || content.includes(searchTerm)) {
+        results.push({
+          id: key,
+          title: item.title,
+          excerpt: extractExcerpt(item.content, searchTerm),
+        });
+      }
+    });
+
+    mainView.classList.add("hidden");
+    detailView.classList.remove("active");
+    searchResults.classList.add("active");
+
+    if (results.length === 0) {
+      searchResultsList.innerHTML =
+        '<div class="no-results">No results found for your search.</div>';
+    } else {
+      searchResultsList.innerHTML = results
+        .map(
+          (result) => `
+     <div class="help-item" onclick="showHelpDetails('${result.id}')">
+       <div class="help-item-title">${result.title}</div>
+       <div class="help-item-desc">${result.excerpt}</div>
+     </div>
+   `
+        )
+        .join("");
+    }
+
+    currentView = "search";
+
+    resetScrollPosition();
+  }
+
+  function extractExcerpt(content, searchTerm) {
+    const plainText = content
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const index = plainText.toLowerCase().indexOf(searchTerm);
+
+    if (index === -1) {
+      return plainText.substring(0, 100) + "...";
+    }
+
+    const start = Math.max(0, index - 50);
+    const end = Math.min(plainText.length, index + searchTerm.length + 50);
+
+    let excerpt = plainText.substring(start, end);
+    if (start > 0) excerpt = "..." + excerpt;
+    if (end < plainText.length) excerpt = excerpt + "...";
+
+    return excerpt;
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("helpSearchInput");
+
+    if (searchInput) {
+      searchInput.addEventListener("input", function (e) {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          performSearch(e.target.value);
+        }, 300);
+      });
+
+      searchInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          clearTimeout(searchTimeout);
+          performSearch(e.target.value);
+        }
+      });
+    }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    const helpPanel = document.getElementById("helpPanel");
+
+    if (helpPanel && helpPanel.classList.contains("active")) {
+      if (e.key === "Escape") {
+        closeHelpPanel();
+      } else if (
+        e.key === "Backspace" &&
+        currentView !== "main" &&
+        e.target.tagName !== "INPUT"
+      ) {
+        e.preventDefault();
+        goBackToMain();
+      }
+    }
+  });
+</script>

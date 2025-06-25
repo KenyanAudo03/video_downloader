@@ -84,8 +84,9 @@
 
     <div class="main-content">
       <div class="sidebar">
-        {% include 'sidebar.html' %}
-        {% include 'feedback.html' %}
+        {% include 'base_extends/sidebar.html' %}
+        {% include 'base_extends/feedback.html' %}
+        {% include 'base_extends/help.html' %}
       </div>
       <div class="content-area">{% block content %}{% endblock %}</div>
     </div>
