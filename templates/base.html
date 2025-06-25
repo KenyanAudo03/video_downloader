@@ -21,7 +21,6 @@
     />
   </head>
   <body>
-    <!-- Header -->
     <div class="header">
       <a href="/" class="homepage_url">
         <div class="logo">
@@ -84,15 +83,15 @@
 
     <div class="main-content">
       <div class="sidebar">
-        {% include 'base_extends/sidebar.html' %}
+        {% include 'base_extends/sidebar.html' %} 
         {% include 'base_extends/feedback.html' %}
         {% include 'base_extends/help.html' %}
       </div>
       <div class="content-area">{% block content %}{% endblock %}</div>
     </div>
 
-    <!-- JS Suggestions + Clear Logic -->
     <script>
+      // JS Suggestions + Clear Logic
       document.addEventListener("DOMContentLoaded", () => {
         const input = document.getElementById("videoUrl");
         const box = document.getElementById("suggestionsBox");
@@ -182,15 +181,9 @@
           }
 
           debounceTimer = setTimeout(() => {
-            console.log("Fetching suggestions for:", query); // Debug log
-
             fetch(`/search/suggest?q=${encodeURIComponent(query)}`)
-              .then((res) => {
-                console.log("Response status:", res.status); // Debug log
-                return res.json();
-              })
+              .then((res) => res.json())
               .then((data) => {
-                console.log("Received data:", data); // Debug log
                 box.innerHTML = "";
                 const suggestions = data?.suggestions || [];
 
@@ -212,20 +205,16 @@
                       input.value = searchValue;
                       box.style.display = "none";
                       toggleClearIcon();
-
-                      // Submit the form
                       form.submit();
                     });
 
                     box.appendChild(suggestionElement);
                   });
                 } else {
-                  console.log("No suggestions received"); // Debug log
                   box.style.display = "none";
                 }
               })
-              .catch((err) => {
-                console.error("Suggestion error:", err);
+              .catch(() => {
                 box.style.display = "none";
               });
           }, 300);
@@ -253,13 +242,61 @@
           }
         });
 
-        // Handle form submission
-        form.addEventListener("submit", (e) => {
+        form.addEventListener("submit", () => {
           showLoadingState();
         });
 
-        // Initialize clear button visibility
         toggleClearIcon();
+      });
+
+      // Close panels and Video Player on Escape key
+      let justClosedPanel = false;
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+
+        const activeElement = document.activeElement;
+        const isTyping =
+          activeElement &&
+          (activeElement.tagName === "INPUT" ||
+            activeElement.tagName === "TEXTAREA" ||
+            activeElement.contentEditable === "true" ||
+            activeElement.isContentEditable);
+
+        const helpPanel = document.getElementById("helpPanel");
+        const feedbackPanel = document.getElementById("feedbackPanel");
+        const isHelpPanelOpen = helpPanel?.classList.contains("active");
+        const isFeedbackPanelOpen = feedbackPanel?.classList.contains("active");
+
+        const splitLayout = document.getElementById("splitLayout");
+        const isVideoPlayerOpen = splitLayout?.style.display === "flex";
+
+        if (justClosedPanel) return;
+
+        if (isHelpPanelOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeHelpPanel();
+          justClosedPanel = true;
+          setTimeout(() => { justClosedPanel = false; }, 100);
+          return;
+        }
+
+        if (isFeedbackPanelOpen) {
+          e.preventDefault();
+          e.stopPropagation();
+          closeFeedbackPanel();
+          justClosedPanel = true;
+          setTimeout(() => { justClosedPanel = false; }, 100);
+          return;
+        }
+
+        if (isVideoPlayerOpen && !isTyping && typeof closeVideoPlayer === 'function') {
+          e.preventDefault();
+          e.stopPropagation();
+          closeVideoPlayer();
+          return;
+        }
       });
     </script>
   </body>
