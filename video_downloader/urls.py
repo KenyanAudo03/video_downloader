@@ -26,6 +26,7 @@ urlpatterns = [
     path("downloader/", include("downloader.urls")),
     path("search/", include("search.urls")),
     path("share/", include("share.urls")),
+    path("feedback/", include("feedback.urls")),
 ]
 
 if settings.DEBUG:
