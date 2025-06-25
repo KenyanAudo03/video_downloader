@@ -72,10 +72,12 @@
       this.currentPage = 1;
       this.maxPages = 4;
       this.hasMoreVideos = true;
+      this.contentWrapper = null;
       this.init();
     }
 
     init() {
+      this.contentWrapper = document.querySelector(".content-wrapper");
       this.bindEvents();
       this.loadVideos("all");
       this.setupInfiniteScroll();
@@ -95,13 +97,12 @@
     }
 
     setupInfiniteScroll() {
-      const contentWrapper = document.querySelector(".content-wrapper");
       let ticking = false;
 
-      contentWrapper.addEventListener("scroll", () => {
+      this.contentWrapper.addEventListener("scroll", () => {
         if (!ticking) {
           requestAnimationFrame(() => {
-            this.handleScroll(contentWrapper);
+            this.handleScroll(this.contentWrapper);
             ticking = false;
           });
           ticking = true;
@@ -125,6 +126,12 @@
 
       if (scrollPercentage > 0.8) {
         this.loadMoreVideos();
+      }
+    }
+
+    resetScrollPosition() {
+      if (this.contentWrapper) {
+        this.contentWrapper.scrollTop = 0;
       }
     }
 
@@ -208,6 +215,10 @@
       this.hasMoreVideos = true;
       this.isLoadingMore = false;
       this.hideLoadingMore();
+
+      // Reset scroll position when switching categories
+      this.resetScrollPosition();
+
       this.loadVideos(category);
     }
 
