@@ -1,11 +1,11 @@
 {% load static %}
-<link rel="stylesheet" href="{% static 'css/base_extends/help.css'%}">
+<link rel="stylesheet" href="{% static 'css/base_extends/help.css'%}" />
 <div class="help-overlay" id="helpOverlay"></div>
 <div class="help-panel" id="helpPanel">
   <div class="help-header">
     <h2 class="help-title">
       <button class="back-btn" id="backBtn" onclick="goBackToMain()">
-        <i class='bxr  bx-arrow-left'  ></i> 
+        <i class="bxr bx-arrow-left"></i>
       </button>
       <span id="helpTitleText">Help & Support</span>
     </h2>
@@ -139,7 +139,12 @@
       <div class="help-section">
         <h3 class="section-title">Need More Help?</h3>
         <div class="contact-section">
-          <a href="{% url 'contact' %}" class="contact-btn">
+          <a
+            href="{% url 'contact' %}"
+            class="contact-btn"
+            target="_blank"
+            onclick="closeHelpPanel()"
+          >
             <i class="bx bx-message-detail"></i>
             Contact Support
           </a>
