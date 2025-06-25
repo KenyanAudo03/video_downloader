@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import Feedback
-
+from django.utils.timezone import localtime
 
 @admin.register(Feedback)
 class FeedbackAdmin(admin.ModelAdmin):
@@ -46,7 +46,7 @@ class FeedbackAdmin(admin.ModelAdmin):
     short_description_display.short_description = "Description"
 
     def formatted_created_at(self, obj):
-        return obj.created_at.strftime("%B %d, %Y %H:%M")
+        return localtime(obj.created_at).strftime("%B %d, %Y %H:%M")
 
     formatted_created_at.short_description = "Created At"
 
