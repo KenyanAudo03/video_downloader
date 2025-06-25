@@ -438,12 +438,12 @@
     currentVideoId = videoId;
     currentPlayingVideoTitle = title;
 
-    // Update publish time
+    // Update publish time - FIXED SELECTOR
     const currentVideoCard = document.querySelector(
       `[data-video-id="${videoId}"]`
     );
     const publishTimeElement = currentVideoCard?.querySelector(
-      ".searched-video-meta span:last-child"
+      ".searched-video-stats" // Changed from ".searched-video-meta span:last-child"
     );
     const publishTime = publishTimeElement?.textContent || "";
 
@@ -452,6 +452,7 @@
     );
     if (publishTimeDisplay) {
       publishTimeDisplay.textContent = publishTime;
+      console.log("Set publish time:", publishTime); // Debug log
     }
 
     currentPlayingVideoChannel = channel;
@@ -478,16 +479,16 @@
       }
 
       const keyboardInfoHTML = `
-      <div class="keyboard-controls-info" style="margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; font-size: 12px; color: #ccc;">
-        <strong>Keyboard Controls:</strong><br>
-        <span style="display: inline-block; margin-right: 15px;">🔄 <strong>Auto-Next:</strong> ON (plays next video automatically)</span><br>
-        <span style="display: inline-block; margin-right: 15px;">⏭️ <strong>N:</strong> Next video</span>
-        <span style="display: inline-block; margin-right: 15px;">⏮️ <strong>P:</strong> Previous video</span>
-        <span style="display: inline-block; margin-right: 15px;">⏩ <strong>S:</strong> Skip restricted video</span>
-        <span style="display: inline-block; margin-right: 15px;">❌ <strong>ESC:</strong> Close player</span><br>
-        <span style="font-size: 10px; color: #999;">💡 If video won't play due to restrictions, press 'S' to skip or wait for auto-skip (3s)</span>
-      </div>
-    `;
+    <div class="keyboard-controls-info" style="margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; font-size: 12px; color: #ccc;">
+      <strong>Keyboard Controls:</strong><br>
+      <span style="display: inline-block; margin-right: 15px;">🔄 <strong>Auto-Next:</strong> ON (plays next video automatically)</span><br>
+      <span style="display: inline-block; margin-right: 15px;">⏭️ <strong>N:</strong> Next video</span>
+      <span style="display: inline-block; margin-right: 15px;">⏮️ <strong>P:</strong> Previous video</span>
+      <span style="display: inline-block; margin-right: 15px;">⏩ <strong>S:</strong> Skip restricted video</span>
+      <span style="display: inline-block; margin-right: 15px;">❌ <strong>ESC:</strong> Close player</span><br>
+      <span style="font-size: 10px; color: #999;">💡 If video won't play due to restrictions, press 'S' to skip or wait for auto-skip (3s)</span>
+    </div>
+  `;
       currentVideoInfo.insertAdjacentHTML("beforeend", keyboardInfoHTML);
     }
 
@@ -502,49 +503,49 @@
       ).textContent;
       const channelName = videoCard.querySelector(
         ".searched-channel-name"
-      ).textContent; // Fixed selector
+      ).textContent;
       const publishedTime =
-        videoCard.querySelector(".searched-video-stats")?.textContent || ""; // Fixed selector
+        videoCard.querySelector(".searched-video-stats")?.textContent || ""; // Fixed selector here too
       const thumbnailImg = videoCard.querySelector(".searched-thumbnail-img");
       const duration = videoCard.querySelector(".searched-video-duration");
 
       sideLoadedVideoIds.add(videoId);
 
       const sideVideoHTML = `
-    <div class="searched-video-card" data-video-id="${videoId}" onclick="switchVideo('${videoId}', '${title.replace(
+  <div class="searched-video-card" data-video-id="${videoId}" onclick="switchVideo('${videoId}', '${title.replace(
         /'/g,
         "\\'"
       )}', '${channelName.replace(/'/g, "\\'")}')">
-      <div class="searched-video-thumbnail">
-        ${
-          thumbnailImg
-            ? `<img class="searched-thumbnail-img" src="${thumbnailImg.src}" alt="${title}" loading="lazy" />`
-            : '<div class="no-thumbnail">No thumbnail</div>'
-        }
-        ${
-          duration
-            ? `<div class="searched-video-duration">${duration.textContent}</div>`
-            : ""
-        }
-        
-        <div class="searched-play-overlay">
-          <div class="searched-play-icon"></div>
-        </div>
-      </div>
+    <div class="searched-video-thumbnail">
+      ${
+        thumbnailImg
+          ? `<img class="searched-thumbnail-img" src="${thumbnailImg.src}" alt="${title}" loading="lazy" />`
+          : '<div class="no-thumbnail">No thumbnail</div>'
+      }
+      ${
+        duration
+          ? `<div class="searched-video-duration">${duration.textContent}</div>`
+          : ""
+      }
       
-      <div class="searched-video-info">
-        <div class="searched-video-title">${title}</div>
-        <div class="searched-video-meta">
-          <div class="searched-channel-name">${channelName}</div>
-          ${
-            publishedTime
-              ? `<div class="searched-video-stats">${publishedTime}</div>`
-              : ""
-          }
-        </div>
+      <div class="searched-play-overlay">
+        <div class="searched-play-icon"></div>
       </div>
     </div>
-  `;
+    
+    <div class="searched-video-info">
+      <div class="searched-video-title">${title}</div>
+      <div class="searched-video-meta">
+        <div class="searched-channel-name">${channelName}</div>
+        ${
+          publishedTime
+            ? `<div class="searched-video-stats">${publishedTime}</div>`
+            : ""
+        }
+      </div>
+    </div>
+  </div>
+`;
       sideVideoGrid.insertAdjacentHTML("beforeend", sideVideoHTML);
     });
 
@@ -559,6 +560,7 @@
 
     startVideoEndDetection();
   }
+
   function switchVideo(videoId, title, channel = null) {
     if (!videoId) {
       return;
@@ -570,13 +572,13 @@
     currentPlayingVideoId = videoId;
     currentVideoId = videoId;
     currentPlayingVideoTitle = title;
-    // Update publish time
 
+    // Update publish time - FIXED SELECTOR
     const currentVideoCard = document.querySelector(
       `[data-video-id="${videoId}"]`
     );
     const publishTimeElement = currentVideoCard?.querySelector(
-      ".searched-video-meta span:last-child"
+      ".searched-video-stats" // Changed from ".searched-video-meta span:last-child"
     );
     const publishTime = publishTimeElement?.textContent || "";
 
@@ -585,7 +587,9 @@
     );
     if (publishTimeDisplay) {
       publishTimeDisplay.textContent = publishTime;
+      console.log("Switched to video, publish time:", publishTime); // Debug log
     }
+
     currentPlayingVideoChannel = channel;
     currentVideoIndex = findCurrentVideoIndex();
     hasTrackedCurrentVideo = false; // Reset tracking flag for new video
@@ -598,10 +602,8 @@
     currentVideoTitle.textContent =
       title.length > 45 ? title.substring(0, 45) + "..." : title;
 
-    // Highlight the currently playing video
     highlightCurrentVideo(videoId);
 
-    // Restart video end detection for new video
     startVideoEndDetection();
   }
 
@@ -610,7 +612,6 @@
     splitLayout.style.display = "none";
     originalLayout.style.display = "block";
 
-    // IMPORTANT: Update loading spinners after changing layout
     updateLoadingSpinners();
 
     stopVideoEndDetection();
