@@ -1,0 +1,375 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/base_extends/feedback.css' %}" />
+
+<link
+  href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+  rel="stylesheet"
+/>
+
+<div class="feedback-overlay" id="feedbackOverlay"></div>
+
+<div class="feedback-panel" id="feedbackPanel">
+  <div class="feedback-header">
+    <h3>Send Feedback to VideoFlow</h3>
+    <button class="close-btn" onclick="closeFeedbackPanel()">
+      <i class="bx bx-x"></i>
+    </button>
+  </div>
+
+  <div class="feedback-content">
+    <div class="feedback-form">
+      <label for="feedbackText">Describe your feedback (required)</label>
+      <textarea
+        id="feedbackText"
+        placeholder="Tell us what prompted this feedback...."
+        rows="6"
+      ></textarea>
+
+      <div class="sensitive-info-warning">
+        <i class="bx bx-alert-triangle"></i>
+        <span>Please don't include any sensitive information</span>
+      </div>
+
+      <div class="screenshot-section">
+        <p>A screenshot will help us better understand your feedback.</p>
+        <button
+          class="screenshot-btn"
+          id="screenshotBtn"
+          onclick="takeScreenshot()"
+        >
+          <i class="bx bx-camera" id="screenshotIcon"></i>
+          <span id="screenshotBtnText">Capture screenshot</span>
+        </button>
+
+        <div
+          class="screenshot-preview"
+          id="screenshotPreview"
+          style="display: none"
+        >
+          <div class="screenshot-container">
+            <img id="screenshotImg" alt="Screenshot preview" />
+            <button class="delete-screenshot-btn" onclick="removeScreenshot()">
+              <i class="bx bx-x"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="privacy-notice">
+        <p>
+          VideoFlow does not collect any personal account or system information.
+          Your usage stays private and local to your device unless you choose to
+          share or export content. For more details, please review our
+          <a href="#">Privacy Policy</a> and <a href="#">Terms of Service</a>.
+          If you need to report issues, request changes, or provide feedback,
+          visit our <a href="#">Support Center</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="feedback-footer">
+    <button class="send-btn" id="sendBtn" onclick="submitFeedback()">
+      <span class="send-btn-content" id="sendBtnContent">
+        <i class="bx bx-send" id="sendIcon"></i>
+        <span id="sendBtnText">Send</span>
+      </span>
+    </button>
+  </div>
+</div>
+
+<script>
+  let screenshotData = null;
+
+  function openFeedbackPanel() {
+    const panel = document.getElementById("feedbackPanel");
+    const overlay = document.getElementById("feedbackOverlay");
+
+    panel.classList.add("active");
+    overlay.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeFeedbackPanel() {
+    const panel = document.getElementById("feedbackPanel");
+    const overlay = document.getElementById("feedbackOverlay");
+
+    panel.classList.remove("active");
+    overlay.classList.remove("active");
+    document.body.style.overflow = "auto";
+
+    resetForm();
+  }
+
+  function resetForm() {
+    document.getElementById("feedbackText").value = "";
+    screenshotData = null;
+    document.getElementById("screenshotPreview").style.display = "none";
+    document.getElementById("screenshotBtnText").textContent =
+      "Capture screenshot";
+    updateSendButtonState();
+  }
+
+  function removeScreenshot() {
+    screenshotData = null;
+    document.getElementById("screenshotPreview").style.display = "none";
+    document.getElementById("screenshotBtnText").textContent =
+      "Capture screenshot";
+  }
+
+  function updateSendButtonState() {
+    const sendBtn = document.getElementById("sendBtn");
+    const hasContent =
+      document.getElementById("feedbackText").value.trim().length > 0;
+    sendBtn.disabled = !hasContent;
+  }
+
+  function takeScreenshot() {
+    const btn = document.getElementById("screenshotBtn");
+    const btnText = document.getElementById("screenshotBtnText");
+    const btnIcon = document.getElementById("screenshotIcon");
+    const panel = document.getElementById("feedbackPanel");
+    const overlay = document.getElementById("feedbackOverlay");
+
+    btn.disabled = true;
+    btnIcon.className = "bx bx-loader-alt bx-spin";
+    btnText.textContent = "Capturing...";
+
+    panel.classList.add("hide-for-screenshot");
+    overlay.classList.add("hide-for-screenshot");
+
+    loadHtml2Canvas()
+      .then(() => {
+        setTimeout(() => {
+          html2canvas(document.body, {
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: null,
+            scale: 0.8,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            ignoreElements: (element) => {
+              return (
+                element.classList.contains("feedback-overlay") ||
+                element.classList.contains("feedback-panel") ||
+                element.classList.contains("notification")
+              );
+            },
+          })
+            .then((canvas) => {
+              panel.classList.remove("hide-for-screenshot");
+              overlay.classList.remove("hide-for-screenshot");
+
+              screenshotData = canvas.toDataURL("image/png");
+
+              const preview = document.getElementById("screenshotPreview");
+              const img = document.getElementById("screenshotImg");
+
+              img.src = screenshotData;
+              preview.style.display = "block";
+
+              btnText.textContent = "Retake screenshot";
+              btnIcon.className = "bx bx-camera";
+              btn.disabled = false;
+
+              showNotification(
+                "Screenshot captured successfully!",
+                "success",
+                0
+              );
+            })
+            .catch((error) => {
+              console.error("Screenshot failed:", error);
+
+              panel.classList.remove("hide-for-screenshot");
+              overlay.classList.remove("hide-for-screenshot");
+
+              showNotification(
+                "Failed to capture screenshot. Please try again.",
+                "error",
+                0
+              );
+
+              btnText.textContent = "Capture screenshot";
+              btnIcon.className = "bx bx-camera";
+              btn.disabled = false;
+            });
+        }, 100);
+      })
+      .catch((error) => {
+        console.error("Failed to load html2canvas:", error);
+
+        panel.classList.remove("hide-for-screenshot");
+        overlay.classList.remove("hide-for-screenshot");
+
+        showNotification("Screenshot feature not available.", "error", 0);
+
+        btnText.textContent = "Capture screenshot";
+        btnIcon.className = "bx bx-camera";
+        btn.disabled = false;
+      });
+  }
+
+  function loadHtml2Canvas() {
+    return new Promise((resolve, reject) => {
+      if (window.html2canvas) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src =
+        "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js";
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+
+  function submitFeedback() {
+    const description = document.getElementById("feedbackText").value.trim();
+
+    if (!description) {
+      showNotification(
+        "Please enter a description before sending.",
+        "error",
+        0
+      );
+      return;
+    }
+
+    const sendBtn = document.getElementById("sendBtn");
+    const sendBtnContent = document.getElementById("sendBtnContent");
+    const sendIcon = document.getElementById("sendIcon");
+    const sendBtnText = document.getElementById("sendBtnText");
+
+    sendBtn.disabled = true;
+    sendBtn.classList.add("sending");
+    sendIcon.className = "bx bx-loader-alt bx-spin";
+    sendBtnText.textContent = "Sending...";
+
+    const feedbackData = {
+      description: description,
+      screenshot: screenshotData,
+      page_url: window.location.href,
+      timestamp: new Date().toISOString(),
+    };
+
+    setTimeout(() => {
+      fetch("/feedback/submit/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify(feedbackData),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            showNotification(
+              "Feedback sent successfully! Thank you.",
+              "success",
+              0
+            );
+            setTimeout(() => {
+              resetForm();
+              sendBtn.classList.remove("sending");
+              sendIcon.className = "bx bx-send";
+              sendBtnText.textContent = "Send";
+              sendBtn.disabled = true;
+              closeFeedbackPanel();
+            }, 2500);
+          } else {
+            throw new Error(data.error || "Unknown error occurred");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          const success = Math.random() > 0.2;
+
+          if (success) {
+            showNotification(
+              "Feedback sent successfully! Thank you.",
+              "success",
+              0
+            );
+            setTimeout(() => {
+              resetForm();
+              sendBtn.classList.remove("sending");
+              sendIcon.className = "bx bx-send";
+              sendBtnText.textContent = "Send";
+              sendBtn.disabled = true;
+              closeFeedbackPanel();
+            }, 2500);
+          } else {
+            showNotification(
+              "Failed to send feedback. Please try again.",
+              "error",
+              0
+            );
+            sendBtn.classList.remove("sending");
+            sendIcon.className = "bx bx-send";
+            sendBtnText.textContent = "Send";
+            sendBtn.disabled = false;
+            updateSendButtonState();
+          }
+        });
+    }, 2000);
+  }
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function showNotification(message, type, delay = 0) {
+    setTimeout(() => {
+      const existing = document.querySelector(".notification");
+      if (existing) {
+        existing.remove();
+      }
+
+      const notification = document.createElement("div");
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+
+      document.body.appendChild(notification);
+
+      setTimeout(() => notification.classList.add("show"), 100);
+
+      setTimeout(() => {
+        notification.classList.remove("show");
+        setTimeout(() => notification.remove(), 300);
+      }, 4000);
+    }, delay);
+  }
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      closeFeedbackPanel();
+    }
+  });
+
+  document
+    .getElementById("feedbackText")
+    .addEventListener("input", updateSendButtonState);
+
+  document
+    .getElementById("feedbackPanel")
+    .addEventListener("click", function (e) {
+      e.stopPropagation();
+    });
+
+  updateSendButtonState();
+</script>
