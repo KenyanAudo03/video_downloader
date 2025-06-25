@@ -1019,9 +1019,6 @@
     // Only handle video player shortcuts if split layout is visible AND user is not typing
     if (splitLayout.style.display === "flex" && !isTyping) {
       switch (e.key) {
-        case "Escape":
-          closeVideoPlayer();
-          break;
         case "n":
         case "N":
           e.preventDefault();
