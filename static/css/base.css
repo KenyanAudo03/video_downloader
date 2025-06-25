@@ -507,3 +507,28 @@
          background-color: #ff0000;
          border-radius: 0 2px 2px 0;
      }
+
+     .legal-links {
+         gap: 0.75rem;
+         font-size: 0.9rem;
+         color: #6b7280;
+         flex-wrap: wrap;
+         padding: 12px 24px;
+     }
+
+     .legal-links a {
+         color: #6b7280;
+         text-decoration: none;
+         font-weight: 500;
+     }
+
+     .legal-links a:hover {
+         text-decoration: underline;
+     }
+
+     .separator {
+         font-size: 0.9rem;
+         pointer-events: none;
+         color: #f3f4f6;
+         user-select: none;
+     }
