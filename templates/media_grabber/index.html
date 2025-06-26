@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VideoFlow - Advanced Social Media Downloader</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="2" fill="rgba(255,255,255,0.1)"/></svg>') repeat;
+            pointer-events: none;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-100px) rotate(360deg); }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            border-radius: 25px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 550px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.8rem;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        input[type="url"] {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e8e8e8;
+            border-radius: 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        input[type="url"]:focus {
+            outline: none;
+            border-color: #667eea;
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        .loading-text {
+            color: #666;
+            font-weight: 500;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            display: none;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 15px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .video-info {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .thumbnail {
+            width: 90px;
+            height: 90px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 3px solid #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .info {
+            flex: 1;
+        }
+
+        .title {
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+            line-height: 1.4;
+        }
+
+        .platform {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .duration {
+            color: #666;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .download-section {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+
+        .filename-display {
+            background: #e9ecef;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #495057;
+            word-break: break-all;
+        }
+
+        .filename-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+            font-weight: 700;
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, #218838 0%, #1ea080 100%);
+            box-shadow: 0 8px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .download-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+
+        .download-status {
+            margin-top: 1rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            display: none;
+        }
+
+        .download-status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .download-status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .download-status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .error {
+            background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+            color: #721c24;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-top: 1.5rem;
+            display: none;
+            border: 1px solid #f5c6cb;
+        }
+
+        .supported-platforms {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #e7f3ff 0%, #cce7ff 100%);
+            border-radius: 15px;
+            font-size: 0.9rem;
+            color: #0c5460;
+            border: 1px solid #b8daff;
+        }
+
+        .supported-platforms h4 {
+            margin-bottom: 0.8rem;
+            color: #0c5460;
+            font-weight: 700;
+        }
+
+        .platform-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .platform-item {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #0c5460;
+        }
+
+        .fallback-download {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+
+        .fallback-download a {
+            color: #0066cc;
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .download-methods {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .download-method-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .method-primary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .method-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+        }
+
+        .method-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+
+        .method-secondary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 1rem;
+                padding: 2rem;
+            }
+
+            .video-info {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .thumbnail {
+                align-self: center;
+            }
+
+            .download-methods {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">VideoFlow</div>
+            <div class="subtitle">Advanced Social Media Video Downloader</div>
+        </div>
+        
+        <form id="videoForm">
+            <div class="input-group">
+                <label for="videoUrl">🔗 Enter Video URL</label>
+                <input type="url" id="videoUrl" placeholder="Paste TikTok, Instagram, Twitter, Facebook, or YouTube video link here..." required>
+            </div>
+            
+            <button type="submit" class="btn" id="extractBtn">
+                <span>🎬 Extract Video Information</span>
+            </button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">Processing video... Please wait</div>
+        </div>
+
+        <div class="result" id="result">
+            <div class="video-info">
+                <img id="thumbnail" class="thumbnail" alt="Video thumbnail">
+                <div class="info">
+                    <div id="title" class="title"></div>
+                    <div id="platform" class="platform"></div>
+                    <div id="duration" class="duration"></div>
+                </div>
+            </div>
+            
+            <div class="download-section">
+                <div class="filename-label">📁 Download Filename:</div>
+                <div class="filename-display" id="filenameDisplay"></div>
+                
+                <div class="download-methods">
+                    <button type="button" class="download-method-btn method-primary" id="downloadBtn">
+                        ⬇️ Force Download
+                    </button>
+                    <button type="button" class="download-method-btn method-secondary" id="openBtn">
+                        🎬 Open Video
+                    </button>
+                </div>
+                
+                <div class="download-status" id="downloadStatus"></div>
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="supported-platforms">
+            <h4>🌟 Supported Platforms</h4>
+            <div class="platform-list">
+                <span class="platform-item">TikTok</span>
+                <span class="platform-item">Instagram</span>
+                <span class="platform-item">Twitter/X</span>
+                <span class="platform-item">Facebook</span>
+                <span class="platform-item">YouTube</span>
+                <span class="platform-item">And More...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use relative URL that matches your Django setup
+        const API_BASE = '/media';
+        
+        const form = document.getElementById('videoForm');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const error = document.getElementById('error');
+        const extractBtn = document.getElementById('extractBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const openBtn = document.getElementById('openBtn');
+        const downloadStatus = document.getElementById('downloadStatus');
+        
+        let downloadUrl = '';
+        let videoTitle = '';
+        let videoId = '';
+
+        // Generate unique VideoFlow ID
+        function generateVideoFlowId() {
+            const timestamp = Date.now().toString(36);
+            const randomStr = Math.random().toString(36).substr(2, 5);
+            return `VideoFlow-${timestamp}-${randomStr}`;
+        }
+
+        // Clean filename for safe download
+        function sanitizeFilename(filename) {
+            return filename
+                .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
+                .replace(/\s+/g, '_')
+                .substring(0, 100);
+        }
+
+        // Show download status
+        function showDownloadStatus(message, type = 'success') {
+            downloadStatus.textContent = message;
+            downloadStatus.className = `download-status ${type}`;
+            downloadStatus.style.display = 'block';
+            
+            setTimeout(() => {
+                downloadStatus.style.display = 'none';
+            }, 8000);
+        }
+
+        // IMPROVED DOWNLOAD FUNCTION - Forces download without opening player
+        async function forceDownload(url, filename) {
+            try {
+                console.log('🚀 Starting forced download:', { url, filename });
+                
+                // Show downloading status
+                downloadBtn.disabled = true;
+                downloadBtn.innerHTML = '⏳ Downloading...';
+                
+                // Method 1: Try to fetch and create blob (most reliable for forcing download)
+                try {
+                    console.log('📥 Attempting blob download...');
+                    
+                    const response = await fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'User-Agent': 'VideoFlow-Downloader/1.0',
+                            'Accept': 'video/mp4,video/*,*/*;q=0.9'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        console.log('📦 Blob created, size:', blob.size, 'bytes');
+                        
+                        // Create blob URL and force download
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        // Create download link with proper attributes to force download
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = blobUrl;
+                        downloadLink.download = filename;
+                        downloadLink.style.display = 'none';
+                        
+                        // Force download behavior
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                        
+                        // Clean up blob URL
+                        setTimeout(() => {
+                            URL.revokeObjectURL(blobUrl);
+                        }, 1000);
+                        
+                        console.log('✅ Blob download successful');
+                        showDownloadStatus('✅ Download started! Check your Downloads folder.', 'success');
+                        return true;
+                    }
+                } catch (fetchError) {
+                    console.log('⚠️ Blob download failed:', fetchError.message);
+                }
+
+                // Method 2: Try server-side proxy download
+                try {
+                    console.log('🔄 Attempting server proxy download...');
+                    
+                    const proxyResponse = await fetch(`${API_BASE}/api/proxy-download/`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ 
+                            url: url, 
+                            filename: filename 
+                        })
+                    });
+
+                    if (proxyResponse.ok) {
+                        const blob = await proxyResponse.blob();
+                        const blobUrl = URL.createObjectURL(blob);
+                        
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = blobUrl;
+                        downloadLink.download = filename;
+                        downloadLink.style.display = 'none';
+                        
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                        
+                        setTimeout(() => {
+                            URL.revokeObjectURL(blobUrl);
+                        }, 1000);
+                        
+                        console.log('✅ Server proxy download successful');
+                        showDownloadStatus('✅ Download started via server proxy!', 'success');
+                        return true;
+                    }
+                } catch (proxyError) {
+                    console.log('⚠️ Server proxy download failed:', proxyError.message);
+                }
+
+                // Method 3: Create hidden iframe for download
+                try {
+                    console.log('🖼️ Attempting iframe download...');
+                    
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = url;
+                    
+                    // Set download attribute if possible
+                    if (iframe.contentDocument) {
+                        const link = iframe.contentDocument.createElement('a');
+                        link.href = url;
+                        link.download = filename;
+                        link.click();
+                    }
+                    
+                    document.body.appendChild(iframe);
+                    
+                    // Remove iframe after a short delay
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 3000);
+                    
+                    console.log('✅ Iframe download attempted');
+                    showDownloadStatus('⚠️ Download attempted. If it opened in browser, right-click and "Save As"', 'warning');
+                    return true;
+                    
+                } catch (iframeError) {
+                    console.log('⚠️ Iframe download failed:', iframeError.message);
+                }
+
+                // If all methods fail, show fallback options
+                showFallbackDownloadOptions(url, filename);
+                return false;
+
+            } catch (error) {
+                console.error('❌ Download error:', error);
+                showDownloadStatus(`❌ Download failed: ${error.message}`, 'error');
+                showFallbackDownloadOptions(url, filename);
+                return false;
+            } finally {
+                // Reset button
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = '⬇️ Force Download';
+            }
+        }
+
+        // Show fallback download options
+        function showFallbackDownloadOptions(url, filename) {
+            const fallbackDiv = document.createElement('div');
+            fallbackDiv.className = 'fallback-download';
+            
+            fallbackDiv.innerHTML = `
+                <strong>📋 Manual Download Options:</strong><br><br>
+                <strong>Method 1:</strong> <a href="${url}" download="${filename}" target="_blank">Right-click this link → "Save link as..."</a><br><br>
+                <strong>Method 2:</strong> Copy this URL and paste in a new tab, then right-click video → "Save video as..."<br>
+                <div style="background: #f8f9fa; padding: 8px; border-radius: 4px; margin-top: 8px; font-family: monospace; font-size: 0.8em; word-break: break-all;">
+                    ${url}
+                </div>
+            `;
+            
+            const downloadSection = document.querySelector('.download-section');
+            const existingFallback = downloadSection.querySelector('.fallback-download');
+            if (existingFallback) {
+                existingFallback.remove();
+            }
+            
+            downloadSection.appendChild(fallbackDiv);
+        }
+
+        // Open video in new tab (for preview)
+        function openVideo(url) {
+            const newWindow = window.open(url, '_blank');
+            if (newWindow) {
+                showDownloadStatus('🎬 Video opened in new tab', 'success');
+            } else {
+                showDownloadStatus('⚠️ Pop-up blocked. Please allow pop-ups for this site.', 'warning');
+            }
+        }
+
+        // Form submission handler
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const url = document.getElementById('videoUrl').value.trim();
+            if (!url) return;
+
+            console.log('📤 Processing URL:', url);
+
+            // Reset UI
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            error.style.display = 'none';
+            extractBtn.disabled = true;
+            downloadStatus.style.display = 'none';
+
+            try {
+                const requestUrl = `${API_BASE}/api/extract/`;
+                console.log('📡 API request to:', requestUrl);
+
+                const response = await fetch(requestUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                console.log('📥 Response status:', response.status);
+                const data = await response.json();
+                console.log('📊 Response data:', data);
+
+                if (data.success) {
+                    // Generate unique VideoFlow ID
+                    videoId = generateVideoFlowId();
+                    
+                    // Display video info
+                    const thumbnailElement = document.getElementById('thumbnail');
+                    thumbnailElement.src = data.thumbnail || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA5MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjRjhGOUZBIiByeD0iMTIiLz4KPHBhdGggZD0iTTM1IDY1TDY1IDQ1TDM1IDI1VjY1WiIgZmlsbD0iIzY2N0VFQSIvPgo8L3N2Zz4=';
+                    
+                    document.getElementById('title').textContent = data.title || 'Unknown Video';
+                    document.getElementById('platform').textContent = data.platform || 'Unknown';
+                    document.getElementById('duration').textContent = data.duration ? `⏱️ ${data.duration}s` : '';
+                    
+                    // Generate filename with VideoFlow ID
+                    const cleanTitle = sanitizeFilename(data.title || 'video');
+                    const filename = `${videoId}_${cleanTitle}.mp4`;
+                    
+                    document.getElementById('filenameDisplay').textContent = filename;
+                    
+                    downloadUrl = data.download_url;
+                    videoTitle = filename;
+                    
+                    console.log('✅ Video extracted successfully');
+                    console.log('🆔 VideoFlow ID:', videoId);
+                    console.log('📁 Filename:', filename);
+                    console.log('🔗 Download URL:', downloadUrl);
+                    
+                    result.style.display = 'block';
+                } else {
+                    throw new Error(data.message || 'Failed to extract video information');
+                }
+            } catch (err) {
+                console.error('❌ Error:', err);
+                error.textContent = `❌ Error: ${err.message}`;
+                error.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+                extractBtn.disabled = false;
+            }
+        });
+
+        // Download button handler - IMPROVED to prevent navigation
+        downloadBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!downloadUrl || !videoTitle) {
+                console.error('❌ No download URL or filename available');
+                showDownloadStatus('❌ No video available for download', 'error');
+                return;
+            }
+            
+            console.log('⬇️ Initiating forced download:', { url: downloadUrl, filename: videoTitle });
+            await forceDownload(downloadUrl, videoTitle);
+        });
+
+        // Open video button handler
+        openBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (!downloadUrl) {
+                console.error('❌ No video URL available');
+                showDownloadStatus('❌ No video available to open', 'error');
+                return;
+            }
+            
+            console.log('🎬 Opening video:', downloadUrl);
+            openVideo(downloadUrl);
+        });
+
+        // Thumbnail error handler
+        document.getElementById('thumbnail').addEventListener('error', function() {
+            console.log('⚠️ Thumbnail failed to load, using placeholder');
+            this.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA5MCA5MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjRjhGOUZBIiByeD0iMTIiLz4KPHBhdGggZD0iTTM1IDY1TDY1IDQ1TDM1IDI1VjY1WiIgZmlsbD0iIzY2N0VFQSIvPgo8L3N2Zz4=';
+        });
+
+        console.log('🚀 VideoFlow Advanced Downloader initialized');
+    </script>
+</body>
+</html>
