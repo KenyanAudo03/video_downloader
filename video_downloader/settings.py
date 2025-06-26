@@ -44,13 +44,10 @@ INSTALLED_APPS = [
     "share",
     "feedback",
     "contact",
-    'rest_framework',
-    'corsheaders',
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    'corsheaders.middleware.CorsMiddleware',
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -142,12 +139,3 @@ SHARE_YOUTUBE_API_KEY = config("YOUTUBE_API_KEY1")
 
 YOUTUBE_API_KEY_1 = config("YOUTUBE_API_KEY2")
 YOUTUBE_API_KEY_2 = config("YOUTUBE_API_KEY3")
-
-REST_FRAMEWORK = {
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
-    ],
-}
