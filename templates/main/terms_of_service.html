@@ -17,7 +17,7 @@
       rel="stylesheet"
       href="{% static 'css/main/terms_of_service.css' %}"
     />
-     <link
+    <link
       rel="icon"
       type="image/x-icon"
       href="{% static 'images/default_images/favicon.png' %}"
@@ -328,11 +328,7 @@
                 <span>privacy@videoflow.com</span>
               </div>
             </a>
-            <a
-              href="{% url 'contact' %}"
-              target="_blank"
-              class="contact-card"
-            >
+            <a href="{% url 'contact' %}" target="_blank" class="contact-card">
               <i class="bx bx-globe"></i>
               <div class="card-text">
                 <strong>Contact Form</strong>
@@ -353,12 +349,17 @@
           <div class="footer-content">
             <div class="footer-links">
               <a href="/"><i class="bx bx-home"></i> Home</a>
-              <a href="{% url 'contact' %}" target="_blank"><i class="bx bx-envelope"></i> Contact</a>
+              <a href="{% url 'contact' %}" target="_blank"
+                ><i class="bx bx-envelope"></i> Contact</a
+              >
               <a href="{% url 'privacy_policy' %}"
                 ><i class="bx bx-shield-alt-2"></i> Privacy Policy</a
               >
               <a href="{% url 'terms_of_service' %}"
                 ><i class="bx bx-file-blank"></i> Terms of Service</a
+              >
+              <a href="{% url 'about' %}"
+                ><i class="bx bx-info-circle"></i> About</a
               >
             </div>
 
