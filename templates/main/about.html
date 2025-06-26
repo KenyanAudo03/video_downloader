@@ -1,0 +1,459 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>About – VideoFlow</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="{% static 'css/main/privacy.css'%}" />
+    <link
+      rel="icon"
+      type="image/x-icon"
+      href="{% static 'images/default_images/favicon.png' %}"
+    />
+  </head>
+  <body>
+    <button class="mobile-menu" onclick="toggleSidebar()">
+      <i class="bx bx-menu"></i>
+    </button>
+
+    <div class="container">
+      <aside class="sidebar" id="sidebar">
+        <a href="/" class="homepage_url">
+          <div class="logo">
+            <div class="logo-icon">📺</div>
+            <span>VideoFlow</span>
+          </div>
+        </a>
+
+        <nav>
+          <div class="nav-section">
+            <div class="nav-title">About VideoFlow</div>
+            <a href="#overview" class="nav-item">
+              <i class="bx bx-info-circle"></i> Overview
+            </a>
+            <a href="#services" class="nav-item">
+              <i class="bx bx-collection"></i> Our Services
+            </a>
+            <a href="#streaming" class="nav-item">
+              <i class="bx bx-play-circle"></i> Video Streaming
+            </a>
+            <a href="#downloads" class="nav-item">
+              <i class="bx bx-download"></i> Download Features
+            </a>
+            <a href="#media-grabber" class="nav-item">
+              <i class="bx bx-link-external"></i> Media Grabber
+            </a>
+            <a href="#accounts" class="nav-item">
+              <i class="bx bx-user-plus"></i> Account System
+            </a>
+            <a href="#data-storage" class="nav-item">
+              <i class="bx bx-data"></i> Data Storage
+            </a>
+            <a href="#contact" class="nav-item">
+              <i class="bx bx-support"></i> Contact Us
+            </a>
+          </div>
+        </nav>
+      </aside>
+
+      <main class="main-content">
+        <div class="header">
+          <h1>About VideoFlow</h1>
+          <div class="effective-date">Your Complete Media Platform</div>
+        </div>
+
+        <div class="content-section" id="overview">
+          <h2 class="section-title">Overview</h2>
+          <div class="section-content">
+            <p>
+              VideoFlow is a comprehensive media platform designed to provide
+              seamless video streaming, downloading capabilities, and social
+              media content grabbing tools. We've built our platform with user
+              experience and reliability at the forefront, ensuring you have
+              access to your favorite content whenever and wherever you need it.
+            </p>
+            <p>
+              Our mission is to create a unified platform where users can
+              stream, download, and manage media content from various sources
+              while maintaining the highest standards of quality and security.
+              Whether you're looking to stream YouTube videos, download content
+              for offline viewing, or grab media from popular social platforms,
+              VideoFlow has you covered.
+            </p>
+          </div>
+        </div>
+
+        <div class="content-section" id="services">
+          <h2 class="section-title">Our Services</h2>
+          <div class="section-content">
+            <p>VideoFlow offers a comprehensive suite of media services:</p>
+            <ul>
+              <li>
+                <strong>YouTube Video Streaming:</strong> Stream YouTube content
+                directly through our optimized player with enhanced features and
+                ad-free experience
+              </li>
+              <li>
+                <strong>Video & Audio Downloads:</strong> Download videos in
+                multiple formats and qualities, or extract audio tracks for
+                music listening
+              </li>
+              <li>
+                <strong>Multi-Platform Media Grabber:</strong> Extract content
+                from TikTok, Instagram, Facebook, and Twitter with a single
+                click
+              </li>
+              <li>
+                <strong>Personal Account System:</strong> Create and manage your
+                personalized account with custom preferences and download
+                history
+              </li>
+              <li>
+                <strong>Cloud Storage Integration:</strong> Secure storage for
+                your downloaded content and account data
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="content-section" id="streaming">
+          <h2 class="section-title">Video Streaming</h2>
+          <div class="section-content">
+            <p>
+              Our streaming service provides an enhanced YouTube viewing
+              experience:
+            </p>
+            <ul>
+              <li>
+                <strong>High-Quality Playback:</strong> Stream videos in up to
+                4K resolution with adaptive bitrate streaming
+              </li>
+              <li>
+                <strong>Ad-Free Experience:</strong> Enjoy uninterrupted viewing
+                without advertisements
+              </li>
+              <li>
+                <strong>Custom Player:</strong> Advanced video player with
+                features like speed control, picture-in-picture, and subtitle
+                support
+              </li>
+              <li>
+                <strong>Playlist Management:</strong> Create and organize custom
+                playlists from YouTube content
+              </li>
+              <li>
+                <strong>Mobile Optimization:</strong> Responsive design that
+                works perfectly on all devices
+              </li>
+            </ul>
+
+            <div class="highlight-box">
+              <div class="content">
+                <strong>Enhanced Experience:</strong> Our streaming platform
+                provides a cleaner, faster, and more feature-rich way to enjoy
+                YouTube content without the distractions.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-section" id="downloads">
+          <h2 class="section-title">Download Features</h2>
+          <div class="section-content">
+            <p>Comprehensive download capabilities for offline access:</p>
+            <ul>
+              <li>
+                <strong>Multiple Video Formats:</strong> Download in MP4, WEBM,
+                MKV, and other popular formats
+              </li>
+              <li>
+                <strong>Quality Selection:</strong> Choose from 144p to 4K
+                resolution based on your needs and storage capacity
+              </li>
+              <li>
+                <strong>Audio Extraction:</strong> Extract high-quality audio in
+                MP3, M4A, or OGG formats from any video
+              </li>
+              <li>
+                <strong>Download Management:</strong> Queue system with pause,
+                resume, and retry functionality
+              </li>
+              <li>
+                <strong>Metadata Preservation:</strong> Keep video titles,
+                descriptions, and thumbnail information
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="content-section" id="media-grabber">
+          <h2 class="section-title">Media Grabber</h2>
+          <div class="section-content">
+            <p>
+              Extract content from popular social media platforms effortlessly:
+            </p>
+            <ul>
+              <li>
+                <strong>TikTok:</strong> Download TikTok videos without
+                watermarks in original quality
+              </li>
+              <li>
+                <strong>Instagram:</strong> Grab photos, videos, stories, and
+                IGTV content from Instagram
+              </li>
+              <li>
+                <strong>Facebook:</strong> Download Facebook videos, including
+                live streams and uploaded content
+              </li>
+              <li>
+                <strong>Twitter/X:</strong> Extract videos and GIFs from Twitter
+                posts and threads
+              </li>
+              <li>
+                <strong>Simple Process:</strong> Just paste the URL and let our
+                system handle the rest
+              </li>
+            </ul>
+            <p>
+              Our media grabber works by analyzing the provided URL and
+              extracting the direct media links, ensuring you get the highest
+              quality content available from each platform.
+            </p>
+          </div>
+        </div>
+
+        <div class="content-section" id="accounts">
+          <h2 class="section-title">Account System</h2>
+          <div class="section-content">
+            <p>
+              Create your personalized VideoFlow account for enhanced features:
+            </p>
+            <ul>
+              <li>
+                <strong>Easy Registration:</strong> Quick account creation with
+                email verification
+              </li>
+              <li>
+                <strong>Download History:</strong> Keep track of all your
+                downloaded content with timestamps and source information
+              </li>
+              <li>
+                <strong>Custom Preferences:</strong> Set default download
+                quality, format preferences, and output folder locations
+              </li>
+              <li>
+                <strong>Playlist Sync:</strong> Save and sync your custom
+                playlists across devices
+              </li>
+              <li>
+                <strong>Usage Statistics:</strong> Monitor your download
+                bandwidth and storage usage
+              </li>
+            </ul>
+            <p>
+              Account creation is completely free and provides you with a
+              personalized dashboard to manage all your media activities
+              efficiently.
+            </p>
+          </div>
+        </div>
+
+        <div class="content-section" id="data-storage">
+          <h2 class="section-title">Data Storage</h2>
+          <div class="section-content">
+            <p>Understanding how we handle and store your data:</p>
+            <ul>
+              <li>
+                <strong>Account Information:</strong> Stored securely using
+                industry-standard encryption on our protected servers
+              </li>
+              <li>
+                <strong>Download History:</strong> Maintained for 90 days by
+                default, with options to extend or clear history manually
+              </li>
+              <li>
+                <strong>User Preferences:</strong> Saved locally and synced to
+                your account for consistent experience across devices
+              </li>
+              <li>
+                <strong>Temporary Files:</strong> Downloaded content cached
+                temporarily (24-48 hours) before automatic cleanup
+              </li>
+              <li>
+                <strong>Data Portability:</strong> Export your data anytime in
+                standard formats
+              </li>
+            </ul>
+
+            <div class="highlight-box">
+              <div class="content">
+                <strong>Your Data, Your Control:</strong> We believe in
+                transparency and user control. You can access, modify, or delete
+                your stored data at any time through your account settings.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="contact-section-alt content-section" id="contact">
+          <h3><i class="bx bx-support"></i> Contact Us</h3>
+          <p>
+            Have questions about VideoFlow or need technical support? We're here
+            to help through multiple channels.
+          </p>
+          <div class="contact-cards">
+            <a href="mailto:support@videoflow.com" class="contact-card">
+              <i class="bx bx-envelope"></i>
+              <div class="card-text">
+                <strong>Email Support</strong>
+                <span>support@videoflow.com</span>
+              </div>
+            </a>
+            <a href="{% url 'contact' %}" target="_blank" class="contact-card">
+              <i class="bx bx-globe"></i>
+              <div class="card-text">
+                <strong>Contact Form</strong>
+                <span>VideoFlow Contact</span>
+              </div>
+            </a>
+            <a href="tel:+254703853259" class="contact-card">
+              <i class="bx bx-phone"></i>
+              <div class="card-text">
+                <strong>Phone Support</strong>
+                <span>+254 703 853 259</span>
+              </div>
+            </a>
+          </div>
+        </div>
+
+        <footer class="footer">
+          <div class="footer-content">
+            <div class="footer-links">
+              <a href="/"><i class="bx bx-home"></i> Home</a>
+              <a href="{% url 'contact' %}" target="_blank"
+                ><i class="bx bx-envelope"></i> Contact</a
+              >
+              <a href="{% url 'privacy_policy' %}"
+                ><i class="bx bx-shield-alt-2"></i> Privacy Policy</a
+              >
+              <a href="{% url 'terms_of_service' %}"
+                ><i class="bx bx-file-blank"></i> Terms of Service</a
+              >
+              <a href="{% url 'about' %}"
+                ><i class="bx bx-info-circle"></i> About</a
+              >
+            </div>
+
+            <div class="social-links">
+              <a
+                href="https://twitter.com/AudoWrld"
+                target="_blank"
+                title="X (Twitter)"
+              >
+                <i class="bx bxl-twitter"></i>
+              </a>
+              <a
+                href="https://wa.me/+254703853259"
+                target="_blank"
+                title="WhatsApp"
+              >
+                <i class="bx bxl-whatsapp"></i>
+              </a>
+              <a
+                href="https://t.me/VictorOwino"
+                target="_blank"
+                title="Telegram"
+              >
+                <i class="bx bxl-telegram"></i>
+              </a>
+              <a
+                href="https://instagram.com/wrldaudo"
+                target="_blank"
+                title="Instagram"
+              >
+                <i class="bx bxl-instagram"></i>
+              </a>
+            </div>
+          </div>
+
+          <div class="copyright">
+            &copy; <span id="year"></span> VideoFlow. All rights reserved.
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      document.getElementById("year").textContent = new Date().getFullYear();
+
+      function toggleSidebar() {
+        const sidebar = document.getElementById("sidebar");
+        sidebar.classList.toggle("open");
+      }
+
+      document.addEventListener("click", function (event) {
+        const sidebar = document.getElementById("sidebar");
+        const mobileMenu = document.querySelector(".mobile-menu");
+
+        if (
+          window.innerWidth <= 768 &&
+          !sidebar.contains(event.target) &&
+          !mobileMenu.contains(event.target)
+        ) {
+          sidebar.classList.remove("open");
+        }
+      });
+
+      document.querySelectorAll(".nav-item").forEach((item) => {
+        item.addEventListener("click", function (e) {
+          e.preventDefault();
+          const targetId = this.getAttribute("href").substring(1);
+          const targetElement = document.getElementById(targetId);
+
+          if (targetElement) {
+            document
+              .querySelectorAll(".nav-item")
+              .forEach((nav) => nav.classList.remove("active"));
+            this.classList.add("active");
+
+            targetElement.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        });
+      });
+
+      const observerOptions = {
+        root: null,
+        rootMargin: "-20% 0px -70% 0px",
+        threshold: 0,
+      };
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const id = entry.target.id;
+            document
+              .querySelectorAll(".nav-item")
+              .forEach((nav) => nav.classList.remove("active"));
+            document.querySelector(`a[href="#${id}"]`).classList.add("active");
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll(".content-section").forEach((section) => {
+        observer.observe(section);
+      });
+    </script>
+  </body>
+</html>
