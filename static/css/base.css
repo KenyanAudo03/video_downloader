@@ -510,10 +510,10 @@
 
      .legal-links {
          gap: 0.75rem;
-         font-size: 0.9rem;
+         font-size: 0.8rem;
          color: #6b7280;
          flex-wrap: wrap;
-         padding: 12px 24px;
+         padding: 10px 24px;
      }
 
      .legal-links a {
