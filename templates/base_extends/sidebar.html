@@ -9,11 +9,15 @@
     </a>
   </li>
   <li class="sidebar-link">
-    <a href="{% url 'media:index' %}" class="link-media">
-      <i class="bxr bx-arrow-down-circle"></i>
+    <a
+      href="{% url 'media:index' %}"
+      class="sidebar-link {% if '/media' in request.path %}active{% endif %}"
+    >
+      <i class="bx bx-arrow-down-circle"></i>
       <span class="link-text">Media Grabber</span>
     </a>
   </li>
+
   <li class="sidebar-link">
     <a href="#favorites" class="link-favorites">
       <i class="bx bx-star"></i>
