@@ -586,6 +586,9 @@ def privacy_policy(request):
 def terms_of_service(request):
     return render(request, "main/terms_of_service.html")
 
+def about(request):
+    return render(request, "main/about.html")
+
 
 def contact(request):
     form = ContactForm()
