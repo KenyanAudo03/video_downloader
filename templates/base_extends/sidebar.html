@@ -9,7 +9,7 @@
     </a>
   </li>
   <li class="sidebar-link">
-    <a href="#media-grabber" class="link-media">
+    <a href="{% url 'media:media_grabber' %}" class="link-media">
       <i class="bxr bx-arrow-down-circle"></i>
       <span class="link-text">Media Grabber</span>
     </a>
@@ -69,8 +69,10 @@
   <div class="legal-links">
     <a href="{% url 'privacy_policy' %}">Privacy Policy</a>
     <span class="separator">&bull;</span>
+    <a href="{% url 'contact' %}" target="_blank">Support Center</a>
+    <span class="separator">&bull;</span>
     <a href="{% url 'terms_of_service' %}">Terms of Service</a>
     <span class="separator">&bull;</span>
-    <a href="{% url 'contact' %}" target="_blank">Support Center</a>
+    <a href="{% url 'about' %}">About</a>
   </div>
 </ul>
