@@ -221,7 +221,7 @@ def process_video_data(video):
 
 def extract_youtube_id(url):
     patterns = [
-        r"(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|music\.youtube\.com\/watch\?v=)([^&\n?#]+)",
+        r"(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|music\.youtube\.com\/watch\?v=|youtube\.com\/shorts\/)([^&\n?#]+)",
         r"(?:localhost|127\.0\.0\.1).*?\/([a-zA-Z0-9_-]{11})",
     ]
 
@@ -230,7 +230,6 @@ def extract_youtube_id(url):
         if match:
             return match.group(1)
     return None
-
 
 def get_video_metadata_by_id(video_id):
     try:
@@ -414,10 +413,12 @@ def parse_iso_duration(duration_str):
 
 
 def detect_platform(url):
-    if "youtube.com" in url or "youtu.be" in url:
-        return "youtube"
-    elif "music.youtube.com" in url:
+    if "music.youtube.com" in url:
         return "youtube_music"
+    elif "youtube.com/shorts" in url:
+        return "youtube_shorts"
+    elif "youtube.com" in url or "youtu.be" in url:
+        return "youtube"
     elif "localhost" in url or "127.0.0.1" in url:
         return "localhost"
     else:
