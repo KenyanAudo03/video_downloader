@@ -1,6 +1,7 @@
 {% extends "base.html" %} {% block title %}VideoFlow - Media Grabber 
 {% endblock %} {% block content %} {% load static %}
 <link rel="stylesheet" href="{% static 'css/media_grabber/index.css' %}" />
+
 <div class="main-container">
   <div class="category-bar-container">
     <div class="category-bar">
@@ -28,7 +29,7 @@
           required
           autocomplete="off"
         />
-        <span class="clear-url-icon" id="clearUrlSearch">
+        <span class="clear-url-icon" id="clearUrlSearch" style="display: none">
           <i class="bx bx-x"></i>
         </span>
         <button type="submit" class="submit-button" id="extractBtn">
@@ -52,6 +53,7 @@
           alt="Video thumbnail"
           style="display: none"
         />
+        <div class="video-duration" id="videoDuration" style="display: none"></div>
         <div id="noThumbnail" class="no-thumbnail" style="display: none">
           <i class="bx bx-video"></i>
           <span>No thumbnail available</span>
@@ -60,7 +62,7 @@
 
       <div class="video-info-section">
         <div class="video-details">
-          <div id="title" class="video-title"></div>
+          <div id="title" class="grabber-video-title"></div>
         </div>
 
         <div class="download-area">
@@ -98,7 +100,7 @@
     </div>
   </div>
   <div class="powered-by">
-    <span>Powered by yt-dlp. Don’t close this page during download.</span>
+    <span>Powered by yt-dlp. Don't close this page during download.</span>
   </div>
 </div>
 
@@ -148,6 +150,7 @@
   const progressText = document.getElementById("progressText");
   const thumbnailElement = document.getElementById("thumbnail");
   const noThumbnailElement = document.getElementById("noThumbnail");
+  const videoDurationElement = document.getElementById("videoDuration");
   const videoPreview = document.getElementById("video-preview");
   const categoryButtons = document.querySelectorAll(".category-btn");
 
@@ -204,6 +207,7 @@
       currentPlatform = btn.dataset.platform;
       urlInput.placeholder = platformConfig[currentPlatform].placeholder;
       urlInput.value = "";
+      clearUrlIcon.style.display = "none";
       hideResults();
       clearStatus();
       hideError();
@@ -254,6 +258,21 @@
       .substring(0, 30);
   }
 
+  function formatDuration(seconds) {
+    if (!seconds || isNaN(seconds)) return null;
+    
+    const totalSeconds = Math.floor(seconds);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const remainingSeconds = totalSeconds % 60;
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+    }
+  }
+
   function truncateTitle(title, maxLength = 30) {
     if (title.length <= maxLength) return title;
     return title.substring(0, maxLength) + "...";
@@ -265,9 +284,11 @@
     progressContainer.style.display = "none";
     document.querySelector(".video-info-section").style.display = "none";
     thumbnailElement.style.display = "none";
+    videoDurationElement.style.display = "none";
     noThumbnailElement.style.display = "none";
     videoPreview.style.display = "none";
     thumbnailElement.src = "";
+    videoDurationElement.textContent = "";
     document.getElementById("title").textContent = "";
     document.getElementById("filenameDisplay").textContent = "";
     currentDownloadUrl = "";
@@ -277,6 +298,7 @@
 
   function hideThumbnail() {
     thumbnailElement.style.display = "none";
+    videoDurationElement.style.display = "none";
     noThumbnailElement.style.display = "none";
     videoPreview.style.display = "none";
   }
@@ -311,6 +333,10 @@
       statusTimeout = setTimeout(() => {
         statusElement.style.display = "none";
       }, 4000);
+    } else if (type === "error") {
+      statusTimeout = setTimeout(() => {
+        statusElement.style.display = "none";
+      }, 6000);
     }
   }
 
@@ -518,8 +544,17 @@
           thumbnailElement.src = data.thumbnail;
           thumbnailElement.style.display = "block";
           noThumbnailElement.style.display = "none";
+          
+          if (data.duration) {
+            const formattedDuration = formatDuration(data.duration);
+            if (formattedDuration) {
+              videoDurationElement.textContent = formattedDuration;
+              videoDurationElement.style.display = "block";
+            }
+          }
         } else {
           thumbnailElement.style.display = "none";
+          videoDurationElement.style.display = "none";
           noThumbnailElement.style.display = "flex";
         }
 
