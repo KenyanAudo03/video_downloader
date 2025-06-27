@@ -256,7 +256,7 @@
        border: 1px solid #333;
    }
 
-   .video-title {
+   .grabber-video-title {
        font-size: 18px;
        font-weight: 600;
        color: #fff;
@@ -456,7 +456,7 @@
            padding: 16px;
        }
 
-       .video-title {
+       .grabber-video-title {
            font-size: 16px;
        }
    }
