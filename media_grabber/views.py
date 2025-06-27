@@ -123,8 +123,6 @@ def extract_video(request):
             platform = "Twitter/X"
         elif "facebook.com" in video_url.lower():
             platform = "Facebook"
-        elif "youtube.com" in video_url.lower() or "youtu.be" in video_url.lower():
-            platform = "YouTube"
 
         return JsonResponse(
             {
