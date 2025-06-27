@@ -59,6 +59,30 @@
     border-color: #1f2937;
 }
 
+.content-wrapper {
+    scrollbar-width: thin;
+    scrollbar-color: #888 transparent;
+}
+
+.content-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.content-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+}
+
+.content-wrapper::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.content-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+
 .videos-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
