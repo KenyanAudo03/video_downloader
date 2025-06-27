@@ -1,91 +1,244 @@
-{% extends "base.html" %}
-{% block title %}VideoFlow - Media Grabber{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block title %}VideoFlow - Media Grabber 
+{% endblock %} {% block content %} {% load static %}
+<link rel="stylesheet" href="{% static 'css/media_grabber/index.css' %}" />
 <div class="main-container">
-  <form id="videoForm">
-    <div class="form-group">
-      <label for="videoUrl">🔗 Enter Video URL</label>
-      <input
-        type="url"
-        id="grabberVideoUrl"
-        placeholder="Paste TikTok, Instagram, Twitter, Facebook, or YouTube video link here..."
-        required
-      />
-    </div>
-
-    <button type="submit" class="submit-button" id="extractBtn">
-      <span>🎬 Extract Video Information</span>
-    </button>
-  </form>
-
-  <div class="loading-container" id="loading" style="display: none;">
-    <div class="loading-spinner"></div>
-    <div class="loading-message">Processing video... Please wait</div>
-  </div>
-
-  <div class="results-container" id="result" style="display: none;">
-    <div class="video-preview">
-      <img id="thumbnail" class="video-thumbnail" alt="Video thumbnail" />
-      <div class="video-details">
-        <div id="title" class="video-title"></div>
-        <div id="platform" class="video-platform"></div>
-        <div id="duration" class="video-duration"></div>
+  <div class="category-bar-container">
+    <div class="category-bar">
+      <div class="category-scroll">
+        <button class="category-btn active" data-platform="tiktok">
+          TikTok
+        </button>
+        <button class="category-btn" data-platform="twitter">Twitter/X</button>
+        <button class="category-btn" data-platform="instagram">
+          Instagram
+        </button>
+        <button class="category-btn" data-platform="facebook">Facebook</button>
       </div>
     </div>
+  </div>
 
-    <div class="download-area">
-      <div class="filename-info">📁 Download Filename:</div>
-      <div class="filename-text" id="filenameDisplay"></div>
-
-      <div class="download-buttons">
-        <button
-          type="button"
-          class="download-button primary-download"
-          id="downloadBtn"
-        >
-          ⬇️ Force Download
-        </button>
-        <button
-          type="button"
-          class="download-button secondary-download"
-          id="openBtn"
-        >
-          🎬 Open Video
+  <div class="functional-division">
+    <form id="videoForm" style="width: 100%">
+      <div class="form-group">
+        <input
+          type="url"
+          id="grabberVideoUrl"
+          class="grabberVideoUrl"
+          placeholder="Paste TikTok link here..."
+          required
+          autocomplete="off"
+        />
+        <span class="clear-url-icon" id="clearUrlSearch">
+          <i class="bx bx-x"></i>
+        </span>
+        <button type="submit" class="submit-button" id="extractBtn">
+          <span id="searchUrlIcon">
+            <i class="bx bx-search" style="color: #fff; font-size: 25px"></i>
+          </span>
         </button>
       </div>
+    </form>
 
-      <div class="status-message" id="downloadStatus" style="display: none;"></div>
+    <div class="loading-container" id="loading" style="display: none">
+      <div class="loading-spinner"></div>
+      <div class="loading-message">Processing video... Please wait</div>
+    </div>
+
+    <div class="results-container" id="result" style="display: none">
+      <div class="video-preview">
+        <img
+          id="thumbnail"
+          class="video-thumbnail"
+          alt="Video thumbnail"
+          style="display: none"
+        />
+        <div id="noThumbnail" class="no-thumbnail" style="display: none">
+          <i class="bx bx-video"></i>
+          <span>No thumbnail available</span>
+        </div>
+      </div>
+
+      <div class="video-info-section">
+        <div class="video-details">
+          <div id="title" class="video-title"></div>
+        </div>
+
+        <div class="download-area">
+          <div class="filename-info">Download Filename:</div>
+          <div class="filename-text" id="filenameDisplay"></div>
+
+          <div class="download-buttons">
+            <button
+              type="button"
+              class="download-button primary-download"
+              id="downloadBtn"
+            >
+              <i class="bx bx-download"></i>
+              Download
+            </button>
+            <button
+              type="button"
+              class="download-button cancel-download"
+              id="cancelBtn"
+            >
+              Cancel
+            </button>
+          </div>
+
+          <div class="progress-container" id="progressContainer">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Downloading... 0%</div>
+          </div>
+
+          <div class="status-message" id="downloadStatus"></div>
+        </div>
+      </div>
     </div>
   </div>
-
-  <div class="error-container" id="error" style="display: none;"></div>
-
-  <div class="platforms-info">
-    <h4>🌟 Supported Platforms</h4>
-    <div class="platforms-grid">
-      <span class="platform-tag">TikTok</span>
-      <span class="platform-tag">Instagram</span>
-      <span class="platform-tag">Twitter/X</span>
-      <span class="platform-tag">Facebook</span>
-    </div>
+  <div class="powered-by">
+    <span>Powered by yt-dlp</span>
   </div>
+</div>
+
+<div class="error-container" id="errorContainer">
+  <span id="errorMessage"></span>
 </div>
 
 <script>
   const API_BASE = window.location.origin + "/media";
 
+  const platformConfig = {
+    tiktok: {
+      name: "TikTok",
+      placeholder: "Paste TikTok link here...",
+      domains: ["tiktok.com", "vm.tiktok.com", "t.tiktok.com"],
+    },
+    twitter: {
+      name: "Twitter/X",
+      placeholder: "Paste Twitter/X link here...",
+      domains: ["twitter.com", "x.com", "t.co"],
+    },
+    instagram: {
+      name: "Instagram",
+      placeholder: "Paste Instagram link here...",
+      domains: ["instagram.com", "instagr.am"],
+    },
+    facebook: {
+      name: "Facebook",
+      placeholder: "Paste Facebook link here...",
+      domains: ["facebook.com", "fb.com", "fb.watch"],
+    },
+  };
+
   const formElement = document.getElementById("videoForm");
   const loadingElement = document.getElementById("loading");
   const resultElement = document.getElementById("result");
-  const errorElement = document.getElementById("error");
+  const errorContainer = document.getElementById("errorContainer");
+  const errorMessage = document.getElementById("errorMessage");
   const extractButton = document.getElementById("extractBtn");
   const downloadButton = document.getElementById("downloadBtn");
-  const openButton = document.getElementById("openBtn");
+  const cancelButton = document.getElementById("cancelBtn");
   const statusElement = document.getElementById("downloadStatus");
+  const urlInput = document.getElementById("grabberVideoUrl");
+  const clearUrlIcon = document.getElementById("clearUrlSearch");
+  const progressContainer = document.getElementById("progressContainer");
+  const progressFill = document.getElementById("progressFill");
+  const progressText = document.getElementById("progressText");
+  const thumbnailElement = document.getElementById("thumbnail");
+  const noThumbnailElement = document.getElementById("noThumbnail");
+  const videoPreview = document.getElementById("video-preview");
+  const categoryButtons = document.querySelectorAll(".category-btn");
 
+  let currentPlatform = "tiktok";
   let currentDownloadUrl = "";
   let currentVideoTitle = "";
   let currentVideoId = "";
+  let downloadAbortController = null;
+  let statusTimeout = null;
+  let isDownloading = false;
+
+  function disableInterfaceDuringDownload() {
+    isDownloading = true;
+    categoryButtons.forEach(btn => {
+      btn.disabled = true;
+      btn.style.pointerEvents = 'none';
+      btn.style.opacity = '0.5';
+    });
+    urlInput.disabled = true;
+    urlInput.style.opacity = '0.5';
+    clearUrlIcon.style.pointerEvents = 'none';
+    clearUrlIcon.style.opacity = '0.5';
+    extractButton.disabled = true;
+    extractButton.style.pointerEvents = 'none';
+    extractButton.style.opacity = '0.5';
+  }
+
+  function enableInterfaceAfterDownload() {
+    isDownloading = false;
+    categoryButtons.forEach(btn => {
+      btn.disabled = false;
+      btn.style.pointerEvents = 'auto';
+      btn.style.opacity = '1';
+    });
+    urlInput.disabled = false;
+    urlInput.style.opacity = '1';
+    clearUrlIcon.style.pointerEvents = 'auto';
+    clearUrlIcon.style.opacity = '1';
+    extractButton.disabled = false;
+    extractButton.style.pointerEvents = 'auto';
+    extractButton.style.opacity = '1';
+  }
+
+  categoryButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (isDownloading) return;
+      
+      document
+        .querySelectorAll(".category-btn")
+        .forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      currentPlatform = btn.dataset.platform;
+      urlInput.placeholder = platformConfig[currentPlatform].placeholder;
+      urlInput.value = "";
+      hideResults();
+      clearStatus();
+      hideError();
+      hideThumbnail();
+    });
+  });
+
+  urlInput.addEventListener("input", () => {
+    if (isDownloading) return;
+    clearUrlIcon.style.display = urlInput.value ? "block" : "none";
+  });
+
+  clearUrlIcon.addEventListener("click", () => {
+    if (isDownloading) return;
+    urlInput.value = "";
+    clearUrlIcon.style.display = "none";
+    urlInput.focus();
+  });
+
+  function showError(message) {
+    errorMessage.textContent = message;
+    errorContainer.classList.add("show");
+
+    setTimeout(() => {
+      hideError();
+    }, 5000);
+  }
+
+  function hideError() {
+    errorContainer.classList.remove("show");
+  }
+
+  function validateUrl(url, platform) {
+    const domains = platformConfig[platform].domains;
+    return domains.some((domain) => url.includes(domain));
+  }
 
   function generateVideoFlowId() {
     const timestamp = Date.now().toString(36);
@@ -97,23 +250,89 @@
     return filename
       .replace(/[<>:"/\\|?*\x00-\x1f]/g, "")
       .replace(/\s+/g, "_")
-      .substring(0, 100);
+      .substring(0, 30);
+  }
+
+  function truncateTitle(title, maxLength = 30) {
+    if (title.length <= maxLength) return title;
+    return title.substring(0, maxLength) + "...";
+  }
+
+  function hideResults() {
+    resultElement.style.display = "none";
+    loadingElement.style.display = "none";
+    progressContainer.style.display = "none";
+    document.querySelector(".video-info-section").style.display = "none";
+    thumbnailElement.style.display = "none";
+    noThumbnailElement.style.display = "none";
+    videoPreview.style.display = "none";
+    thumbnailElement.src = "";
+    document.getElementById("title").textContent = "";
+    document.getElementById("filenameDisplay").textContent = "";
+    currentDownloadUrl = "";
+    currentVideoTitle = "";
+    currentVideoId = "";
+  }
+
+  function hideThumbnail() {
+    thumbnailElement.style.display = "none";
+    noThumbnailElement.style.display = "none";
+    videoPreview.style.display = "none";
+  }
+
+  function clearStatus() {
+    statusElement.style.display = "none";
+    if (statusTimeout) {
+      clearTimeout(statusTimeout);
+      statusTimeout = null;
+    }
   }
 
   function showStatus(message, type = "success") {
+    clearStatus();
     statusElement.textContent = message;
     statusElement.className = `status-message ${type}`;
     statusElement.style.display = "block";
 
-    setTimeout(() => {
-      statusElement.style.display = "none";
-    }, 8000);
+    if (type === "success" || type === "warning") {
+      statusTimeout = setTimeout(() => {
+        statusElement.style.display = "none";
+      }, 4000);
+    }
+  }
+
+  function simulateProgress() {
+    let progress = 0;
+    progressContainer.style.display = "block";
+
+    const interval = setInterval(() => {
+      progress += Math.random() * 15;
+      if (progress > 95) progress = 95;
+
+      progressFill.style.width = progress + "%";
+      progressText.textContent = `Downloading... ${Math.round(progress)}%`;
+
+      if (downloadAbortController?.signal.aborted) {
+        clearInterval(interval);
+        progressContainer.style.display = "none";
+        return;
+      }
+    }, 200);
+
+    return interval;
   }
 
   async function forceDownload(url, filename) {
     try {
+      downloadAbortController = new AbortController();
+      disableInterfaceDuringDownload();
+
+      downloadButton.innerHTML =
+        '<i class="bx bx-loader-alt bx-spin"></i> Downloading...';
       downloadButton.disabled = true;
-      downloadButton.innerHTML = "⏳ Downloading...";
+      cancelButton.style.display = "block";
+
+      const progressInterval = simulateProgress();
 
       try {
         const response = await fetch(url, {
@@ -122,12 +341,15 @@
             "User-Agent": "VideoFlow-Downloader/1.0",
             Accept: "video/mp4,video/*,*/*;q=0.9",
           },
+          signal: downloadAbortController.signal,
         });
 
         if (response.ok) {
           const blob = await response.blob();
-          const blobUrl = URL.createObjectURL(blob);
 
+          if (downloadAbortController.signal.aborted) return;
+
+          const blobUrl = URL.createObjectURL(blob);
           const downloadLink = document.createElement("a");
           downloadLink.href = blobUrl;
           downloadLink.download = filename;
@@ -137,15 +359,23 @@
           downloadLink.click();
           document.body.removeChild(downloadLink);
 
-          setTimeout(() => {
-            URL.revokeObjectURL(blobUrl);
-          }, 1000);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 
-          showStatus("✅ Download started! Check your Downloads folder.", "success");
+          clearInterval(progressInterval);
+          progressFill.style.width = "100%";
+          progressText.textContent = "Download completed!";
+
+          showStatus("Download completed successfully!", "success");
           return true;
         }
       } catch (fetchError) {
-        console.log("Blob download failed:", fetchError.message);
+        if (fetchError.name === "AbortError") {
+          clearInterval(progressInterval);
+          progressContainer.style.display = "none";
+          showStatus("Download cancelled", "warning");
+          return false;
+        }
+        console.log("Direct download failed:", fetchError.message);
       }
 
       try {
@@ -158,12 +388,15 @@
             url: url,
             filename: filename,
           }),
+          signal: downloadAbortController.signal,
         });
 
         if (proxyResponse.ok) {
           const blob = await proxyResponse.blob();
-          const blobUrl = URL.createObjectURL(blob);
 
+          if (downloadAbortController.signal.aborted) return;
+
+          const blobUrl = URL.createObjectURL(blob);
           const downloadLink = document.createElement("a");
           downloadLink.href = blobUrl;
           downloadLink.download = filename;
@@ -173,68 +406,72 @@
           downloadLink.click();
           document.body.removeChild(downloadLink);
 
-          setTimeout(() => {
-            URL.revokeObjectURL(blobUrl);
-          }, 1000);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 
-          showStatus("✅ Download started via server proxy!", "success");
+          clearInterval(progressInterval);
+          progressFill.style.width = "100%";
+          progressText.textContent = "Download completed!";
+
+          showStatus("Download completed via server proxy!", "success");
           return true;
         }
       } catch (proxyError) {
+        if (proxyError.name === "AbortError") {
+          clearInterval(progressInterval);
+          progressContainer.style.display = "none";
+          showStatus("Download cancelled", "warning");
+          return false;
+        }
         console.log("Server proxy download failed:", proxyError.message);
       }
 
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = url;
-
-      document.body.appendChild(iframe);
-
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 3000);
-
-      showStatus('⚠️ Download attempted. If it opened in browser, right-click and "Save As"', "warning");
-      return true;
-
+      clearInterval(progressInterval);
+      showStatus("Download failed. Please try again.", "error");
+      return false;
     } catch (error) {
-      showStatus(`❌ Download failed: ${error.message}`, "error");
+      showStatus(`Download failed: ${error.message}`, "error");
       return false;
     } finally {
       downloadButton.disabled = false;
-      downloadButton.innerHTML = "⬇️ Force Download";
-    }
-  }
+      downloadButton.innerHTML = '<i class="bx bx-download"></i> Download';
+      cancelButton.style.display = "none";
+      downloadAbortController = null;
+      enableInterfaceAfterDownload();
 
-  function openVideo(url) {
-    const newWindow = window.open(url, "_blank");
-    if (newWindow) {
-      showStatus("🎬 Video opened in new tab", "success");
-    } else {
-      showStatus("⚠️ Pop-up blocked. Please allow pop-ups for this site.", "warning");
+      setTimeout(() => {
+        progressContainer.style.display = "none";
+      }, 3000);
     }
   }
 
   formElement.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const urlInput = document.getElementById("grabberVideoUrl");
+    if (isDownloading) return;
+
     const url = urlInput.value.trim();
-    
+
     if (!url) {
-      showStatus("❌ Please enter a valid URL", "error");
+      showError("Please enter a valid URL");
       return;
     }
 
-    loadingElement.style.display = "block";
+    if (!validateUrl(url, currentPlatform)) {
+      showError(
+        `Please enter a valid ${platformConfig[currentPlatform].name} link`
+      );
+      return;
+    }
+
+    loadingElement.style.display = "flex";
     resultElement.style.display = "none";
-    errorElement.style.display = "none";
+    hideError();
     extractButton.disabled = true;
-    statusElement.style.display = "none";
+    clearStatus();
 
     try {
       const requestUrl = `${API_BASE}/api/extract/`;
-      
+
       const response = await fetch(requestUrl, {
         method: "POST",
         headers: {
@@ -249,14 +486,20 @@
       if (data.success) {
         currentVideoId = generateVideoFlowId();
 
-        const thumbnailElement = document.getElementById("thumbnail");
-        thumbnailElement.src = data.thumbnail || "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA5MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjRjhGOUZBIiByeD0iMTIiLz4KPHBhdGggZD0iTTM1IDY1TDY1IDQ1TDM1IDI1VjY1WiIgZmlsbD0iIzY2N0VFQSIvPgo8L3N2Zz4=";
+        if (data.thumbnail) {
+          thumbnailElement.src = data.thumbnail;
+          thumbnailElement.style.display = "block";
+          noThumbnailElement.style.display = "none";
+        } else {
+          thumbnailElement.style.display = "none";
+          noThumbnailElement.style.display = "flex";
+        }
 
-        document.getElementById("title").textContent = data.title || "Unknown Video";
-        document.getElementById("platform").textContent = data.platform || "Unknown";
-        document.getElementById("duration").textContent = data.duration ? `⏱️ ${data.duration}s` : "";
+        const videoTitle = data.title || "Unknown Video";
+        document.getElementById("title").textContent =
+          truncateTitle(videoTitle);
 
-        const cleanTitle = sanitizeFilename(data.title || "video");
+        const cleanTitle = sanitizeFilename(videoTitle);
         const filename = `${currentVideoId}_${cleanTitle}.mp4`;
 
         document.getElementById("filenameDisplay").textContent = filename;
@@ -264,15 +507,14 @@
         currentDownloadUrl = data.download_url;
         currentVideoTitle = filename;
 
+        document.querySelector(".video-info-section").style.display = "flex";
         resultElement.style.display = "block";
-        showStatus("✅ Video information extracted successfully!", "success");
+        showStatus("Video information extracted successfully!", "success");
       } else {
         throw new Error(data.message || "Failed to extract video information");
       }
     } catch (err) {
-      errorElement.textContent = `❌ Error: ${err.message}`;
-      errorElement.style.display = "block";
-      showStatus(`❌ ${err.message}`, "error");
+      showError(`Error: ${err.message}`);
     } finally {
       loadingElement.style.display = "none";
       extractButton.disabled = false;
@@ -284,27 +526,22 @@
     e.stopPropagation();
 
     if (!currentDownloadUrl || !currentVideoTitle) {
-      showStatus("❌ No video available for download", "error");
+      showError("No video available for download");
       return;
     }
 
     await forceDownload(currentDownloadUrl, currentVideoTitle);
   });
 
-  openButton.addEventListener("click", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!currentDownloadUrl) {
-      showStatus("❌ No video available to open", "error");
-      return;
+  cancelButton.addEventListener("click", () => {
+    if (downloadAbortController) {
+      downloadAbortController.abort();
     }
-
-    openVideo(currentDownloadUrl);
   });
 
-  document.getElementById("thumbnail").addEventListener("error", function () {
-    this.src = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOTAiIGhlaWdodD0iOTAiIHZpZXdCb3g9IjAgMCA5MCA5MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjkwIiBoZWlnaHQ9IjkwIiBmaWxsPSIjRjhGOUZBIiByeD0iMTIiLz4KPHBhdGggZD0iTTM1IDY1TDY1IDQ1TDM1IDI1VjY1WiIgZmlsbD0iIzY2N0VFQSIvPgo8L3N2Zz4=";
+  thumbnailElement.addEventListener("error", function () {
+    this.style.display = "none";
+    noThumbnailElement.style.display = "flex";
   });
 </script>
 {% endblock %}
