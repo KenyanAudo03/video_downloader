@@ -98,7 +98,7 @@
     </div>
   </div>
   <div class="powered-by">
-    <span>Powered by yt-dlp</span>
+    <span>Powered by yt-dlp. Don’t close this page during download.</span>
   </div>
 </div>
 
@@ -157,44 +157,45 @@
   let currentVideoId = "";
   let downloadAbortController = null;
   let statusTimeout = null;
+  let progressInterval = null;
   let isDownloading = false;
 
   function disableInterfaceDuringDownload() {
     isDownloading = true;
-    categoryButtons.forEach(btn => {
+    categoryButtons.forEach((btn) => {
       btn.disabled = true;
-      btn.style.pointerEvents = 'none';
-      btn.style.opacity = '0.5';
+      btn.style.pointerEvents = "none";
+      btn.style.opacity = "0.5";
     });
     urlInput.disabled = true;
-    urlInput.style.opacity = '0.5';
-    clearUrlIcon.style.pointerEvents = 'none';
-    clearUrlIcon.style.opacity = '0.5';
+    urlInput.style.opacity = "0.5";
+    clearUrlIcon.style.pointerEvents = "none";
+    clearUrlIcon.style.opacity = "0.5";
     extractButton.disabled = true;
-    extractButton.style.pointerEvents = 'none';
-    extractButton.style.opacity = '0.5';
+    extractButton.style.pointerEvents = "none";
+    extractButton.style.opacity = "0.5";
   }
 
   function enableInterfaceAfterDownload() {
     isDownloading = false;
-    categoryButtons.forEach(btn => {
+    categoryButtons.forEach((btn) => {
       btn.disabled = false;
-      btn.style.pointerEvents = 'auto';
-      btn.style.opacity = '1';
+      btn.style.pointerEvents = "auto";
+      btn.style.opacity = "1";
     });
     urlInput.disabled = false;
-    urlInput.style.opacity = '1';
-    clearUrlIcon.style.pointerEvents = 'auto';
-    clearUrlIcon.style.opacity = '1';
+    urlInput.style.opacity = "1";
+    clearUrlIcon.style.pointerEvents = "auto";
+    clearUrlIcon.style.opacity = "1";
     extractButton.disabled = false;
-    extractButton.style.pointerEvents = 'auto';
-    extractButton.style.opacity = '1';
+    extractButton.style.pointerEvents = "auto";
+    extractButton.style.opacity = "1";
   }
 
   categoryButtons.forEach((btn) => {
     btn.addEventListener("click", () => {
       if (isDownloading) return;
-      
+
       document
         .querySelectorAll(".category-btn")
         .forEach((b) => b.classList.remove("active"));
@@ -282,10 +283,22 @@
 
   function clearStatus() {
     statusElement.style.display = "none";
+    statusElement.textContent = "";
+    statusElement.className = "status-message";
     if (statusTimeout) {
       clearTimeout(statusTimeout);
       statusTimeout = null;
     }
+  }
+
+  function clearProgress() {
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      progressInterval = null;
+    }
+    progressContainer.style.display = "none";
+    progressFill.style.width = "0%";
+    progressText.textContent = "Downloading... 0%";
   }
 
   function showStatus(message, type = "success") {
@@ -305,7 +318,7 @@
     let progress = 0;
     progressContainer.style.display = "block";
 
-    const interval = setInterval(() => {
+    progressInterval = setInterval(() => {
       progress += Math.random() * 15;
       if (progress > 95) progress = 95;
 
@@ -313,26 +326,29 @@
       progressText.textContent = `Downloading... ${Math.round(progress)}%`;
 
       if (downloadAbortController?.signal.aborted) {
-        clearInterval(interval);
+        clearInterval(progressInterval);
+        progressInterval = null;
         progressContainer.style.display = "none";
         return;
       }
     }, 200);
 
-    return interval;
+    return progressInterval;
   }
 
   async function forceDownload(url, filename) {
     try {
       downloadAbortController = new AbortController();
       disableInterfaceDuringDownload();
+      clearStatus();
+      clearProgress();
 
       downloadButton.innerHTML =
         '<i class="bx bx-loader-alt bx-spin"></i> Downloading...';
       downloadButton.disabled = true;
       cancelButton.style.display = "block";
 
-      const progressInterval = simulateProgress();
+      simulateProgress();
 
       try {
         const response = await fetch(url, {
@@ -361,7 +377,10 @@
 
           setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 
-          clearInterval(progressInterval);
+          if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+          }
           progressFill.style.width = "100%";
           progressText.textContent = "Download completed!";
 
@@ -370,8 +389,7 @@
         }
       } catch (fetchError) {
         if (fetchError.name === "AbortError") {
-          clearInterval(progressInterval);
-          progressContainer.style.display = "none";
+          clearProgress();
           showStatus("Download cancelled", "warning");
           return false;
         }
@@ -408,7 +426,10 @@
 
           setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
 
-          clearInterval(progressInterval);
+          if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+          }
           progressFill.style.width = "100%";
           progressText.textContent = "Download completed!";
 
@@ -417,18 +438,18 @@
         }
       } catch (proxyError) {
         if (proxyError.name === "AbortError") {
-          clearInterval(progressInterval);
-          progressContainer.style.display = "none";
+          clearProgress();
           showStatus("Download cancelled", "warning");
           return false;
         }
         console.log("Server proxy download failed:", proxyError.message);
       }
 
-      clearInterval(progressInterval);
+      clearProgress();
       showStatus("Download failed. Please try again.", "error");
       return false;
     } catch (error) {
+      clearProgress();
       showStatus(`Download failed: ${error.message}`, "error");
       return false;
     } finally {
@@ -438,8 +459,15 @@
       downloadAbortController = null;
       enableInterfaceAfterDownload();
 
+      if (progressInterval) {
+        clearInterval(progressInterval);
+        progressInterval = null;
+      }
+
       setTimeout(() => {
-        progressContainer.style.display = "none";
+        if (!isDownloading) {
+          progressContainer.style.display = "none";
+        }
       }, 3000);
     }
   }
