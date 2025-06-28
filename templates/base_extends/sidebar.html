@@ -37,7 +37,10 @@
     </a>
   </li>
   <li class="sidebar-link">
-    <a href="#audio-player" class="link-audio">
+    <a
+      href="{% url 'audio:home' %}"
+      class="sidebar-link {% if '/audio' in request.path %}active{% endif %}"
+    >
       <i class="bx bx-headphone"></i>
       <span class="link-text">Audio Player</span>
     </a>
