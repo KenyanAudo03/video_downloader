@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% block title %}VideoFlow - Media Grabber 
+{% extends "base.html" %} {% block title %}VideoFlow - Media Grabber
 {% endblock %} {% block content %} {% load static %}
 <link rel="stylesheet" href="{% static 'css/media_grabber/index.css' %}" />
 
@@ -53,7 +53,11 @@
           alt="Video thumbnail"
           style="display: none"
         />
-        <div class="video-duration" id="videoDuration" style="display: none"></div>
+        <div
+          class="video-duration"
+          id="videoDuration"
+          style="display: none"
+        ></div>
         <div id="noThumbnail" class="no-thumbnail" style="display: none">
           <i class="bx bx-video"></i>
           <span>No thumbnail available</span>
@@ -260,16 +264,18 @@
 
   function formatDuration(seconds) {
     if (!seconds || isNaN(seconds)) return null;
-    
+
     const totalSeconds = Math.floor(seconds);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const remainingSeconds = totalSeconds % 60;
-    
+
     if (hours > 0) {
-      return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+      return `${hours}:${minutes.toString().padStart(2, "0")}:${remainingSeconds
+        .toString()
+        .padStart(2, "0")}`;
     } else {
-      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+      return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
     }
   }
 
@@ -544,7 +550,7 @@
           thumbnailElement.src = data.thumbnail;
           thumbnailElement.style.display = "block";
           noThumbnailElement.style.display = "none";
-          
+
           if (data.duration) {
             const formattedDuration = formatDuration(data.duration);
             if (formattedDuration) {
@@ -605,6 +611,37 @@
   thumbnailElement.addEventListener("error", function () {
     this.style.display = "none";
     noThumbnailElement.style.display = "flex";
+  });
+</script>
+
+<script>
+  // Initialize UI from Django-passed URL and platform
+  const initialUrl = "{{ initial_url|escapejs }}";
+  const initialPlatform = "{{ initial_platform|escapejs }}";
+
+  function initializeFromUrl() {
+    if (initialUrl && initialPlatform) {
+      categoryButtons.forEach((btn) => {
+        btn.classList.remove("active");
+        if (btn.dataset.platform === initialPlatform) {
+          btn.classList.add("active");
+          currentPlatform = initialPlatform;
+        }
+      });
+
+      urlInput.placeholder = platformConfig[currentPlatform].placeholder;
+      urlInput.value = initialUrl;
+      clearUrlIcon.style.display = "block";
+      window.history.replaceState({}, document.title, "/media/");
+
+      setTimeout(() => {
+        formElement.dispatchEvent(new Event("submit"));
+      }, 500);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    initializeFromUrl();
   });
 </script>
 {% endblock %}
