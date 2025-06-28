@@ -83,13 +83,11 @@
 
     <div class="main-content">
       <div class="sidebar">
-        {% include 'base_extends/sidebar.html' %} 
-        {% include 'base_extends/feedback.html' %}
-        {% include 'base_extends/help.html' %}
+        {% include 'base_extends/sidebar.html' %} {% include
+        'base_extends/feedback.html' %} {% include 'base_extends/help.html' %}
       </div>
       <div class="content-area">{% block content %}{% endblock %}</div>
     </div>
-
     <script>
       // JS Suggestions + Clear Logic
       document.addEventListener("DOMContentLoaded", () => {
@@ -131,7 +129,7 @@
 
           suggestionElement.innerHTML = `
             <div class="video-suggestion">
-              <div class="thumbnail-container">
+              <div class="suggestion-thumbnail-container">
                 <img src="${thumbnail}" alt="${title}" class="suggestion-video-thumbnail" 
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div style="display: none; width: 60px; height: 45px; background: #333; border-radius: 4px; align-items: center; justify-content: center; color: #666; font-size: 12px;">
@@ -145,7 +143,7 @@
               </div>
               <div class="video-info">
                 <div class="video-title">${title}</div>
-                <div class="video-meta">
+                <div class="suggestion-video-meta">
                   ${channel ? `<span>${channel}</span>` : ""}
                   ${views ? `<span>• ${views}</span>` : ""}
                 </div>
@@ -161,9 +159,9 @@
           suggestionElement.className = "suggestion-item";
 
           suggestionElement.innerHTML = `
-            <div class="text-suggestion">
-              <i class="bx bx-search search-icon"></i>
-              <span class="suggestion-text">${suggestion.text}</span>
+            <div class="result-text-suggestion">
+              <i class="bx bx-search result-search-icon"></i>
+              <span class="result-suggestion-text">${suggestion.text}</span>
             </div>
           `;
 
@@ -177,6 +175,7 @@
 
           if (!query) {
             box.style.display = "none";
+            box.innerHTML = "";
             return;
           }
 
@@ -204,6 +203,7 @@
                       const searchValue = item.title || item.text || "";
                       input.value = searchValue;
                       box.style.display = "none";
+                      box.innerHTML = "";
                       toggleClearIcon();
                       form.submit();
                     });
@@ -212,10 +212,12 @@
                   });
                 } else {
                   box.style.display = "none";
+                  box.innerHTML = "";
                 }
               })
               .catch(() => {
                 box.style.display = "none";
+                box.innerHTML = "";
               });
           }, 300);
         });
@@ -224,13 +226,14 @@
           e.stopPropagation();
           input.value = "";
           box.style.display = "none";
+          box.innerHTML = "";
           clearBtn.style.display = "none";
           input.focus();
         });
 
         input.addEventListener("focus", () => {
           toggleClearIcon();
-          if (box.children.length > 0) {
+          if (box.children.length > 0 && input.value.trim()) {
             box.style.display = "block";
           }
         });
@@ -278,7 +281,9 @@
           e.stopPropagation();
           closeHelpPanel();
           justClosedPanel = true;
-          setTimeout(() => { justClosedPanel = false; }, 100);
+          setTimeout(() => {
+            justClosedPanel = false;
+          }, 100);
           return;
         }
 
@@ -287,11 +292,17 @@
           e.stopPropagation();
           closeFeedbackPanel();
           justClosedPanel = true;
-          setTimeout(() => { justClosedPanel = false; }, 100);
+          setTimeout(() => {
+            justClosedPanel = false;
+          }, 100);
           return;
         }
 
-        if (isVideoPlayerOpen && !isTyping && typeof closeVideoPlayer === 'function') {
+        if (
+          isVideoPlayerOpen &&
+          !isTyping &&
+          typeof closeVideoPlayer === "function"
+        ) {
           e.preventDefault();
           e.stopPropagation();
           closeVideoPlayer();
