@@ -1,0 +1,124 @@
+{% extends "base.html" %}{% block title %}Audio Home{% endblock %}
+{% load static %} {% block content %}
+<link rel="stylesheet" href="{% static 'css/audio/home.css' %}" />
+<div class="main-container">
+  <div class="welcome-note">
+    <h1>Welcome to the Audio Player</h1>
+    <p>Listen to your favorite tracks right here—quick and easy.</p>
+  </div>
+
+  <div class="function-division">
+    <form style="width: 59%" id="audioSearchForm" method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <input
+          type="text"
+          id="audioSearch"
+          class="audioSearch"
+          placeholder="Search YouTube videos to play audio..."
+          required
+          autocomplete="off"
+        />
+        <span
+          class="clear-audio-icon"
+          id="clearAudioSearch"
+          style="display: none"
+        >
+          <i class="bx bx-x"></i>
+        </span>
+        <button type="submit" class="submit-button" id="searchAudioButton">
+          <span id="searchAudioIcon">
+            <i class="bx bx-search" style="color: #fff; font-size: 25px"></i>
+          </span>
+        </button>
+        <div class="suggestions-container" id="suggestionsContainer"></div>
+      </div>
+    </form>
+  </div>
+
+  <div class="content-wrapper">
+    <div class="audio-player-section" id="audioPlayerSection">
+      <div class="player-layout">
+        <div class="player-left">
+          <div class="album-art" id="albumArt">
+            <div class="default-icon">
+              <i class="bx bx-music"></i>
+            </div>
+          </div>
+
+          <div class="track-info">
+            <div class="track-title" id="trackTitle">Select a song to play</div>
+            <div class="track-artist" id="trackArtist">
+              Choose from search results
+            </div>
+          </div>
+        </div>
+
+        <div class="player-right">
+          <!-- Equalizer Effect -->
+          <div class="equalizer" id="equalizer">
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+            <div class="eq-bar"></div>
+          </div>
+
+          <!-- Progress Section -->
+          <div class="progress-section">
+            <div class="waveform" id="waveform">
+              <div class="waveform-progress"></div>
+              <div class="progress-handle" id="progressHandle"></div>
+            </div>
+            <div class="time-display">
+              <span id="currentTime">0:00</span>
+              <span id="totalTime">0:00</span>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="controls">
+            <button class="control-btn" id="shuffleBtn">
+              <i class="bx bx-shuffle"></i>
+            </button>
+            <button class="control-btn" id="prevBtn">
+              <i class="bx bx-skip-previous"></i>
+            </button>
+            <button class="play-pause-btn" id="playPauseBtn">
+              <i class="bx bx-play"></i>
+            </button>
+            <button class="control-btn" id="nextBtn">
+              <i class="bx bx-skip-next"></i>
+            </button>
+            <button class="control-btn" id="repeatBtn">
+              <i class="bx bx-repeat"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-container" id="resultsContainer"></div>
+  </div>
+</div>
+
+<div id="youtubePlayer" class="youtube-player"></div>
+
+{% include 'audio/home_js.html' %} {% endblock %}
