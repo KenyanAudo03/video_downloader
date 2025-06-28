@@ -24,6 +24,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("media/", include("media_grabber.urls")),
     path("search/", include("search.urls")),
+    path("audio/", include("audio.urls")),
     path("share/", include("share.urls")),
     path("feedback/", include("feedback.urls")),
     path("contact/", include("contact.urls")),

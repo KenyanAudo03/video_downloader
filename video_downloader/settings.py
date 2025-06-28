@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "share",
     "feedback",
     "contact",
+    "audio",
 ]
 
 MIDDLEWARE = [
