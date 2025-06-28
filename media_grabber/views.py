@@ -12,7 +12,15 @@ logger = logging.getLogger(__name__)
 
 
 def media_grabber(request):
-    return render(request, "media_grabber/index.html")
+    initial_url = request.GET.get("url", "")
+    initial_platform = request.GET.get("platform", "tiktok")
+
+    context = {
+        "initial_url": initial_url,
+        "initial_platform": initial_platform,
+    }
+
+    return render(request, "media_grabber/index.html", context)
 
 
 @csrf_exempt
