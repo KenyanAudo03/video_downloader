@@ -231,6 +231,7 @@ def extract_youtube_id(url):
             return match.group(1)
     return None
 
+
 def get_video_metadata_by_id(video_id):
     try:
         ydl_opts = {
@@ -447,6 +448,35 @@ def search_results(request):
     if is_url:
         platform = detect_platform(query)
         video_id = extract_youtube_id(query)
+
+        # Check if it's a social media platform that should go to media grabber
+        social_platforms = {
+            "tiktok.com": "tiktok",
+            "vm.tiktok.com": "tiktok",
+            "t.tiktok.com": "tiktok",
+            "twitter.com": "twitter",
+            "x.com": "twitter",
+            "t.co": "twitter",
+            "instagram.com": "instagram",
+            "instagr.am": "instagram",
+            "facebook.com": "facebook",
+            "fb.com": "facebook",
+            "fb.watch": "facebook",
+        }
+
+        detected_social_platform = None
+        for domain, platform_name in social_platforms.items():
+            if domain in query.lower():
+                detected_social_platform = platform_name
+                break
+
+        # If it's a social media URL, redirect to media grabber with the URL and platform
+        if detected_social_platform:
+            from django.shortcuts import redirect
+            from urllib.parse import urlencode
+
+            params = {"url": query, "platform": detected_social_platform}
+            return redirect(f"/media/?{urlencode(params)}")
 
         if platform == "unknown":
             return render(
