@@ -536,7 +536,7 @@ def search_results(request):
             }
         )
     except Exception as e:
-        context["error"] = f"Search failed: {str(e)}"
+        context["error"] = f"Search Failed"
 
     return render(request, "search/search_results.html", context)
 
