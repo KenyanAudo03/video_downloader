@@ -1,4 +1,4 @@
-{% extends "base.html" %}{% block title %}Audio Home{% endblock %}
+{% extends "base.html" %}{% block title %}Audio Home{% endblock %} 
 {% load static %} {% block content %}
 <link rel="stylesheet" href="{% static 'css/audio/home.css' %}" />
 <div class="main-container">
@@ -95,6 +95,36 @@
 
           <!-- Controls -->
           <div class="controls">
+            <button class="control-btn volume-btn" id="volumeBtn">
+              <i class="bx bx-volume-full"></i>
+            </button>
+
+            <div class="volume-control" id="volumeControl">
+              <div class="volume-slider">
+                <div class="volume-track">
+                  <div class="volume-fill" id="volumeFill"></div>
+                  <div class="volume-handle" id="volumeHandle"></div>
+                </div>
+              </div>
+            </div>
+
+            <style>
+              .volume-control {
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(15, 23, 42, 0.95);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(148, 163, 184, 0.2);
+                border-radius: 12px;
+                padding: 15px 8px;
+                margin-bottom: 10px;
+                transition: all 0.3s ease;
+                z-index: 1000;
+              }
+            </style>
+
             <button class="control-btn" id="shuffleBtn">
               <i class="bx bx-shuffle"></i>
             </button>
