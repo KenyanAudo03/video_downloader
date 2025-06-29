@@ -446,10 +446,18 @@ def search_results(request):
             is_url = True
 
     if is_url:
+        audio_url_pattern = r'http://127\.0\.0\.1:8000/audio/([a-zA-Z0-9_-]+)/?'
+        audio_match = re.match(audio_url_pattern, query)
+        
+        if audio_match:
+            video_id = audio_match.group(1)
+            from django.shortcuts import redirect
+            from django.urls import reverse
+            return redirect(reverse('audio:video_detail', args=[video_id]))
+
         platform = detect_platform(query)
         video_id = extract_youtube_id(query)
 
-        # Check if it's a social media platform that should go to media grabber
         social_platforms = {
             "tiktok.com": "tiktok",
             "vm.tiktok.com": "tiktok",
@@ -470,7 +478,6 @@ def search_results(request):
                 detected_social_platform = platform_name
                 break
 
-        # If it's a social media URL, redirect to media grabber with the URL and platform
         if detected_social_platform:
             from django.shortcuts import redirect
             from urllib.parse import urlencode
