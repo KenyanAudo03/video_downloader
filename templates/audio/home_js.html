@@ -1,5 +1,5 @@
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", function () {
   const form = document.getElementById("audioSearchForm");
   const searchInput = document.getElementById("audioSearch");
   const clearIcon = document.getElementById("clearAudioSearch");
@@ -62,6 +62,9 @@
 
   function onPlayerReady(event) {
     console.log("Player ready");
+    if (player && player.setVolume) {
+      player.setVolume(currentVolume);
+    }
   }
 
   function onPlayerError(event) {
@@ -493,6 +496,166 @@
         resultsContainer.innerHTML = '<div class="error">An error occurred while searching</div>';
       });
   }
+
+  const volumeBtn = document.getElementById("volumeBtn");
+  const volumeControl = document.getElementById("volumeControl");
+  const volumeFill = document.getElementById("volumeFill");
+  const volumeHandle = document.getElementById("volumeHandle");
+  const volumeSlider = volumeControl.querySelector(".volume-slider");
+
+  let currentVolume = 70;
+  let isMuted = false;
+  let previousVolume = 70;
+  let isVolumeControlVisible = false;
+  let isDraggingVolume = false;
+
+  function updateVolumeIcon(volume) {
+    const icon = volumeBtn.querySelector("i");
+    if (isMuted || volume === 0) {
+      icon.className = "bx bx-volume-mute";
+    } else if (volume < 30) {
+      icon.className = "bx bx-volume";
+    } else if (volume < 70) {
+      icon.className = "bx bx-volume-low";
+      
+    } else {
+      icon.className = "bx bx-volume-full";
+    }
+  }
+
+  function updateVolumeSlider(volume) {
+    const percentage = volume;
+    volumeFill.style.height = percentage + "%";
+    volumeHandle.style.bottom = `calc(${percentage}% - 6px)`;
+  }
+
+  function setVolume(volume) {
+    currentVolume = Math.max(0, Math.min(100, volume));
+    if (player && player.setVolume) {
+      player.setVolume(currentVolume);
+    }
+    updateVolumeIcon(currentVolume);
+    updateVolumeSlider(currentVolume);
+  }
+
+  function toggleMute() {
+    if (isMuted) {
+      isMuted = false;
+      setVolume(previousVolume);
+    } else {
+      isMuted = true;
+      previousVolume = currentVolume;
+      setVolume(0);
+    }
+  }
+
+  function showVolumeControl() {
+    isVolumeControlVisible = true;
+    volumeControl.style.display = "block";
+    volumeControl.classList.add("show");
+  }
+
+  function hideVolumeControl() {
+    if (!isDraggingVolume) {
+      isVolumeControlVisible = false;
+      volumeControl.classList.remove("show");
+      setTimeout(() => {
+        if (!isVolumeControlVisible) {
+          volumeControl.style.display = "none";
+        }
+      }, 300);
+    }
+  }
+
+  volumeBtn.addEventListener("click", function(e) {
+    e.stopPropagation();
+    toggleMute();
+  });
+
+  volumeBtn.addEventListener("mouseenter", showVolumeControl);
+  volumeBtn.addEventListener("mouseleave", function() {
+    setTimeout(hideVolumeControl, 100);
+  });
+
+  volumeControl.addEventListener("mouseenter", function() {
+    isVolumeControlVisible = true;
+  });
+
+  volumeControl.addEventListener("mouseleave", hideVolumeControl);
+
+  function handleVolumeSliderInteraction(e) {
+    const rect = volumeSlider.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const percentage = Math.max(0, Math.min(100, ((rect.height - y) / rect.height) * 100));
+    
+    if (isMuted && percentage > 0) {
+      isMuted = false;
+    }
+    
+    setVolume(percentage);
+  }
+
+  volumeSlider.addEventListener("mousedown", function(e) {
+    isDraggingVolume = true;
+    handleVolumeSliderInteraction(e);
+    
+    const handleMouseMove = (e) => {
+      handleVolumeSliderInteraction(e);
+    };
+    
+    const handleMouseUp = () => {
+      isDraggingVolume = false;
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      setTimeout(hideVolumeControl, 500);
+    };
+    
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  });
+
+  volumeSlider.addEventListener("click", handleVolumeSliderInteraction);
+
+  document.addEventListener("click", function(e) {
+    if (!e.target.closest(".volume-btn") && !e.target.closest(".volume-control")) {
+      hideVolumeControl();
+    }
+  });
+
+  function isInputActive() {
+    const activeElement = document.activeElement;
+    return activeElement && (
+      activeElement.tagName.toLowerCase() === 'input' ||
+      activeElement.tagName.toLowerCase() === 'textarea' ||
+      activeElement.isContentEditable
+    );
+  }
+
+  window.addEventListener("keydown", function(e) {
+    if (!isInputActive()) {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setVolume(currentVolume + 5);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();  
+        setVolume(currentVolume - 5);
+      } else if (e.key === "m" || e.key === "M") {
+        e.preventDefault();
+        toggleMute();
+      } else if (e.key === " ") {
+        e.preventDefault();
+        if (player && currentVideoId) {
+          if (isPlaying) {
+            player.pauseVideo();
+          } else {
+            player.playVideo();
+          }
+        }
+      }
+    }
+  });
+
+  setVolume(currentVolume);
 
   if (typeof YT === "undefined") {
     const tag = document.createElement("script");
