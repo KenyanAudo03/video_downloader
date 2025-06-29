@@ -41,6 +41,14 @@
   let hasStartedPlaying = false;
   let youtubeApiLoaded = false;
 
+  function updatePageTitle(title) {
+    if (title) {
+      document.title = title;
+    } else {
+      document.title = "Audio Home";
+    }
+  }
+
   function loadYouTubeAPI() {
     if (youtubeApiLoaded || typeof YT !== "undefined") {
       if (typeof YT !== "undefined" && !player) {
@@ -101,6 +109,7 @@
       startTimeUpdate();
       equalizer.classList.add("playing");
       clearTimeout(restrictedCheckTimeout);
+      updatePageTitle(trackTitle.textContent);
     } else if (event.data === YT.PlayerState.PAUSED) {
       isPlaying = false;
       playPauseBtn.innerHTML = '<i class="bx bx-play"></i>';
@@ -112,6 +121,7 @@
       stopTimeUpdate();
       equalizer.classList.remove("playing");
       hasStartedPlaying = false;
+      updatePageTitle(null);
       handleTrackEnd();
     } else if (event.data === YT.PlayerState.BUFFERING) {
       if (!hasStartedPlaying) {
@@ -694,5 +704,33 @@
   });
 
   setVolume(volumeLevel);
+
+  const autoSearchUrl = window.autoSearchUrl || null;
+  const autoSearchEnabled = window.autoSearchEnabled || false;
+  
+  if (autoSearchEnabled && autoSearchUrl && searchInput && form) {
+    searchInput.value = autoSearchUrl;
+    setTimeout(function() {
+      form.dispatchEvent(new Event('submit'));
+    }, 100);
+  }
+
+  updatePageTitle(null);
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if auto_search_enabled %}
+        const autoSearchUrl = "{{ auto_search_url|escapejs }}";
+        const searchInput = document.getElementById('audioSearch');
+        const searchForm = document.getElementById('audioSearchForm');
+        
+        if (autoSearchUrl && searchInput && searchForm) {
+            searchInput.value = autoSearchUrl;
+            setTimeout(function() {
+                searchForm.dispatchEvent(new Event('submit'));
+            }, 100);
+        }
+    {% endif %}
 });
 </script>
