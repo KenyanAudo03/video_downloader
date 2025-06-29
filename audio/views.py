@@ -26,6 +26,20 @@ def home(request):
     return render(request, "audio/home.html")
 
 
+def video_detail(request, video_id):
+    """
+    Handle direct video URL access - redirect to home with video search
+    URL pattern: /audio/<video_id>
+    """
+    if not re.match(r"^[a-zA-Z0-9_-]{11}$", video_id):
+        return JsonResponse({"error": "Invalid video ID format"}, status=400)
+
+    full_url = request.build_absolute_uri()
+
+    context = {"auto_search_url": full_url, "auto_search_enabled": True}
+    return render(request, "audio/home.html", context)
+
+
 @require_http_methods(["POST"])
 @csrf_exempt
 def search_youtube(request):
@@ -116,7 +130,7 @@ def search_youtube(request):
 
         except Exception as e:
             logger.error(f"Search error: {e}")
-            return JsonResponse({"error": f"Search failed: {str(e)}"}, status=500)
+            return JsonResponse({"error": f"Search Failed"}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
