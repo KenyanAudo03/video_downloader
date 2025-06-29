@@ -21,6 +21,7 @@
   const shuffleBtn = document.getElementById("shuffleBtn");
   const repeatBtn = document.getElementById("repeatBtn");
   const equalizer = document.getElementById("equalizer");
+  const shareBtn = document.getElementById("shareBtn");
 
   let player;
   let currentVideoId = null;
@@ -38,6 +39,22 @@
   let isSearching = false;
   let restrictedCheckTimeout;
   let hasStartedPlaying = false;
+  let youtubeApiLoaded = false;
+
+  function loadYouTubeAPI() {
+    if (youtubeApiLoaded || typeof YT !== "undefined") {
+      if (typeof YT !== "undefined" && !player) {
+        window.onYouTubeIframeAPIReady();
+      }
+      return;
+    }
+    
+    youtubeApiLoaded = true;
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    const firstScriptTag = document.getElementsByTagName("script")[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  }
 
   window.onYouTubeIframeAPIReady = function () {
     player = new YT.Player("youtubePlayer", {
@@ -246,6 +263,84 @@
     }
   }
 
+  function showShareNotification(message, bgColor = "#4CAF50") {
+    const notification = document.createElement("div");
+    notification.textContent = message;
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${bgColor};
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 10000;
+      animation: slideInRight 0.3s ease-out;
+    `;
+
+    if (!document.querySelector("#share-notification-styles")) {
+      const style = document.createElement("style");
+      style.id = "share-notification-styles";
+      style.textContent = `
+        @keyframes slideInRight {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes slideOutRight {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+      notification.style.animation = "slideOutRight 0.3s ease-in";
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.remove();
+        }
+      }, 300);
+    }, 3000);
+  }
+
+  function fallbackCopyText(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.left = "-999999px";
+    textArea.style.top = "-999999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      document.execCommand('copy');
+      showShareNotification("Link copied to clipboard!");
+    } catch (err) {
+      showShareNotification("Failed to copy link", "#f44336");
+    }
+
+    document.body.removeChild(textArea);
+  }
+
   playPauseBtn.addEventListener("click", function () {
     if (player && currentVideoId) {
       if (isPlaying) {
@@ -300,6 +395,24 @@
     }
   });
 
+  shareBtn.addEventListener("click", function() {
+    if (currentVideoId) {
+      const shareUrl = `${location.origin}/audio/${currentVideoId}`;
+      
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          showShareNotification("Link copied to clipboard!");
+        }).catch(() => {
+          fallbackCopyText(shareUrl);
+        });
+      } else {
+        fallbackCopyText(shareUrl);
+      }
+    } else {
+      showShareNotification("No track currently playing", "#f44336");
+    }
+  });
+
   waveform.addEventListener("click", function (e) {
     if (player && duration > 0 && currentVideoId) {
       const rect = waveform.getBoundingClientRect();
@@ -314,6 +427,7 @@
     const value = this.value.trim();
     if (value && !isSearching) {
       clearIcon.style.display = "block";
+      loadYouTubeAPI();
       clearTimeout(suggestionTimeout);
       suggestionTimeout = setTimeout(() => {
         if (!isSearching) {
@@ -414,6 +528,7 @@
 
   function searchVideos(query) {
     isSearching = true;
+    loadYouTubeAPI();
     searchButton.disabled = true;
     resultsContainer.style.display = "block";
     clearTimeout(suggestionTimeout);
@@ -498,127 +613,46 @@
   }
 
   const volumeBtn = document.getElementById("volumeBtn");
-  const volumeControl = document.getElementById("volumeControl");
-  const volumeFill = document.getElementById("volumeFill");
-  const volumeHandle = document.getElementById("volumeHandle");
-  const volumeSlider = volumeControl.querySelector(".volume-slider");
 
   let currentVolume = 70;
-  let isMuted = false;
-  let previousVolume = 70;
-  let isVolumeControlVisible = false;
-  let isDraggingVolume = false;
+  let volumeLevel = 2;
 
-  function updateVolumeIcon(volume) {
+  function updateVolumeIcon(level) {
     const icon = volumeBtn.querySelector("i");
-    if (isMuted || volume === 0) {
+    if (level === 0) {
       icon.className = "bx bx-volume-mute";
-    } else if (volume < 30) {
-      icon.className = "bx bx-volume";
-    } else if (volume < 70) {
+    } else if (level === 1) {
       icon.className = "bx bx-volume-low";
-      
     } else {
       icon.className = "bx bx-volume-full";
     }
   }
 
-  function updateVolumeSlider(volume) {
-    const percentage = volume;
-    volumeFill.style.height = percentage + "%";
-    volumeHandle.style.bottom = `calc(${percentage}% - 6px)`;
-  }
-
-  function setVolume(volume) {
-    currentVolume = Math.max(0, Math.min(100, volume));
+  function setVolume(level) {
+    volumeLevel = level;
+    if (level === 0) {
+      currentVolume = 0;
+    } else if (level === 1) {
+      currentVolume = 35;
+    } else {
+      currentVolume = 70;
+    }
+    
     if (player && player.setVolume) {
       player.setVolume(currentVolume);
     }
-    updateVolumeIcon(currentVolume);
-    updateVolumeSlider(currentVolume);
+    updateVolumeIcon(level);
   }
 
-  function toggleMute() {
-    if (isMuted) {
-      isMuted = false;
-      setVolume(previousVolume);
-    } else {
-      isMuted = true;
-      previousVolume = currentVolume;
-      setVolume(0);
-    }
-  }
-
-  function showVolumeControl() {
-    isVolumeControlVisible = true;
-    volumeControl.style.display = "block";
-    volumeControl.classList.add("show");
-  }
-
-  function hideVolumeControl() {
-    if (!isDraggingVolume) {
-      isVolumeControlVisible = false;
-      volumeControl.classList.remove("show");
-      setTimeout(() => {
-        if (!isVolumeControlVisible) {
-          volumeControl.style.display = "none";
-        }
-      }, 300);
-    }
+  function cycleVolume() {
+    volumeLevel = (volumeLevel + 1) % 3;
+    setVolume(volumeLevel);
   }
 
   volumeBtn.addEventListener("click", function(e) {
     e.stopPropagation();
-    toggleMute();
-  });
-
-  volumeBtn.addEventListener("mouseenter", showVolumeControl);
-  volumeBtn.addEventListener("mouseleave", function() {
-    setTimeout(hideVolumeControl, 100);
-  });
-
-  volumeControl.addEventListener("mouseenter", function() {
-    isVolumeControlVisible = true;
-  });
-
-  volumeControl.addEventListener("mouseleave", hideVolumeControl);
-
-  function handleVolumeSliderInteraction(e) {
-    const rect = volumeSlider.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const percentage = Math.max(0, Math.min(100, ((rect.height - y) / rect.height) * 100));
-    
-    if (isMuted && percentage > 0) {
-      isMuted = false;
-    }
-    
-    setVolume(percentage);
-  }
-
-  volumeSlider.addEventListener("mousedown", function(e) {
-    isDraggingVolume = true;
-    handleVolumeSliderInteraction(e);
-    
-    const handleMouseMove = (e) => {
-      handleVolumeSliderInteraction(e);
-    };
-    
-    const handleMouseUp = () => {
-      isDraggingVolume = false;
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      setTimeout(hideVolumeControl, 500);
-    };
-    
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
-  });
-
-  volumeSlider.addEventListener("click", handleVolumeSliderInteraction);
-
-  document.addEventListener("click", function(e) {
-    if (!e.target.closest(".volume-btn") && !e.target.closest(".volume-control")) {
-      hideVolumeControl();
+    if (currentVideoId) {
+      cycleVolume();
     }
   });
 
@@ -632,16 +666,20 @@
   }
 
   window.addEventListener("keydown", function(e) {
-    if (!isInputActive()) {
+    if (!isInputActive() && currentVideoId) {
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        setVolume(currentVolume + 5);
+        if (volumeLevel < 2) {
+          setVolume(volumeLevel + 1);
+        }
       } else if (e.key === "ArrowDown") {
         e.preventDefault();  
-        setVolume(currentVolume - 5);
+        if (volumeLevel > 0) {
+          setVolume(volumeLevel - 1);
+        }
       } else if (e.key === "m" || e.key === "M") {
         e.preventDefault();
-        toggleMute();
+        cycleVolume();
       } else if (e.key === " ") {
         e.preventDefault();
         if (player && currentVideoId) {
@@ -655,15 +693,6 @@
     }
   });
 
-  setVolume(currentVolume);
-
-  if (typeof YT === "undefined") {
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    const firstScriptTag = document.getElementsByTagName("script")[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-  } else {
-    window.onYouTubeIframeAPIReady();
-  }
+  setVolume(volumeLevel);
 });
 </script>
