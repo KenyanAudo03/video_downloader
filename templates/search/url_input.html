@@ -15,9 +15,9 @@
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowfullscreen
         id="sideVideoFrame"
+        loading="lazy"
       >
       </iframe>
-      <!-- Mute indicator moved inside video container -->
       <div id="muteIndicator" class="mute-indicator"></div>
     </div>
     <div class="current-video-info" id="currentVideoInfo">
@@ -68,41 +68,40 @@
   </div>
 </div>
 
-<!-- Keyboard hint -->
 <div class="keyboard-hint">
   Press <span class="kbd-key">M</span> to mute/unmute
 </div>
 
-<!-- YouTube API Script -->
-<script src="https://www.youtube.com/iframe_api"></script>
-
 <script>
   let player;
-  let isMuted = true; // Video starts muted
+  let isMuted = true;
+  let apiLoaded = false;
+  let playerReady = false;
   
-  // YouTube API ready callback
+  function loadYouTubeAPI() {
+    if (apiLoaded) return;
+    apiLoaded = true;
+    
+    const script = document.createElement('script');
+    script.src = 'https://www.youtube.com/iframe_api';
+    script.async = true;
+    document.head.appendChild(script);
+  }
+  
   function onYouTubeIframeAPIReady() {
     player = new YT.Player('sideVideoFrame', {
       events: {
-        'onReady': onPlayerReady,
-        'onStateChange': onPlayerStateChange
+        'onReady': function(event) {
+          playerReady = true;
+          console.log('YouTube player ready');
+        },
+        'onStateChange': function(event) {}
       }
     });
   }
   
-  function onPlayerReady(event) {
-    // Player is ready, mute toggle will work now
-    console.log('YouTube player ready');
-  }
-  
-  function onPlayerStateChange(event) {
-    // Handle player state changes if needed
-  }
-
-  // Mute/Unmute toggle function
   function toggleMute() {
-    if (!player || typeof player.isMuted !== 'function') {
-      console.log('Player not ready yet');
+    if (!playerReady || !player || typeof player.isMuted !== 'function') {
       return;
     }
 
@@ -119,7 +118,6 @@
     }
   }
 
-  // Show mute indicator
   function showMuteIndicator(text) {
     const indicator = document.getElementById('muteIndicator');
     indicator.textContent = text;
@@ -130,7 +128,6 @@
     }, 1000);
   }
 
-  // Check if input/textarea is active
   function isInputActive() {
     const activeElement = document.activeElement;
     const inputTypes = ['input', 'textarea', 'select'];
@@ -138,16 +135,18 @@
            activeElement.contentEditable === 'true';
   }
 
-  // Keyboard event listener
   document.addEventListener('keydown', function(event) {
-    // Check if 'M' key is pressed and no input is active
     if (event.key.toLowerCase() === 'm' && !isInputActive()) {
-      event.preventDefault(); // Prevent default behavior
-      toggleMute();
+      event.preventDefault();
+      if (!apiLoaded) {
+        loadYouTubeAPI();
+        setTimeout(() => toggleMute(), 1000);
+      } else {
+        toggleMute();
+      }
     }
   });
 
-  // Existing share functionality
   function shareCurrentVideo() {
     const videoId = "{{ video_id }}";
     const videoUrl = `${window.location.origin}/${videoId}`;
@@ -255,6 +254,10 @@
       }, 300);
     }, 3000);
   }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(loadYouTubeAPI, 100);
+  });
 </script>
 {% endif %}
 {% endblock %}
